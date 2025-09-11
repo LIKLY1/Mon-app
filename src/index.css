@@ -1,0 +1,120 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root{
+  --neon: #2dd4bf;
+  --neon-rgb: 45,212,191;
+}
+
+/* néon plus riche avec pulsing optionnel */
+.btn-neon {
+  position: relative;
+  border: 1px solid rgba(var(--neon-rgb),0.9);
+  box-shadow:
+    0 0 8px rgba(var(--neon-rgb),0.6),
+    0 0 26px rgba(var(--neon-rgb),0.22),
+    inset 0 0 6px rgba(255,255,255,0.03);
+  transition: box-shadow .18s ease, transform .12s ease;
+}
+.btn-neon:hover {
+  box-shadow:
+    0 0 12px rgba(var(--neon-rgb),0.85),
+    0 0 44px rgba(var(--neon-rgb),0.32);
+  transform: translateY(-2px);
+}
+.btn-neon:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 14px rgba(var(--neon-rgb),1),
+    0 0 56px rgba(var(--neon-rgb),0.45);
+}
+
+/* pulse optionnel : ajouter la classe "pulse" au bouton pour un effet battant */
+.btn-neon.pulse::after{
+  content: "";
+  position: absolute;
+  inset: -8px;
+  border-radius: inherit;
+  background: radial-gradient(circle, rgba(var(--neon-rgb),0.24), transparent 40%);
+  filter: blur(10px);
+  pointer-events: none;
+  animation: neonPulse 2.4s infinite;
+}
+@keyframes neonPulse {
+  0%   { opacity: 0.45; transform: scale(1); }
+  50%  { opacity: 1;   transform: scale(1.03); }
+  100% { opacity: 0.45; transform: scale(1); }
+}
+/* Effet néon pour les onglets actifs */
+.tab-neon {
+  box-shadow:
+    0 0 6px rgba(45,212,191,0.6),   /* couleur principale #2dd4bf */
+    0 0 16px rgba(45,212,191,0.25);
+  border: 1px solid rgba(45,212,191,0.7);
+  transition: box-shadow .2s ease, border .2s ease;
+}
+
+.tab-neon:hover {
+  box-shadow:
+    0 0 10px rgba(45,212,191,0.85),
+    0 0 26px rgba(45,212,191,0.35);
+}
+
+
+/* Effet néon plus léger pour onglets */
+.tab-neon-lite {
+  color: var(--neon);
+  border-bottom: 2px solid var(--neon);
+  text-shadow: 0 0 6px rgba(var(--neon-rgb), 0.6);
+  transition: color .2s ease, border-color .2s ease, text-shadow .2s ease;
+}
+
+.tab-neon-lite:hover {
+  text-shadow: 0 0 10px rgba(var(--neon-rgb), 0.85);
+}
+
+/* Halo néon très léger pour les cartes (KPI + graphiques) */
+.neon-frame-lite {
+  position: relative;              /* crée le contexte pour le pseudo-élément */
+  border-radius: inherit;          /* suit le rayon du parent (rounded-2xl) */
+}
+
+.neon-frame-lite::after {
+  content: "";
+  position: absolute;
+  inset: 0;                     /* léger débord pour que le halo respire */
+  border-radius: inherit;
+  pointer-events: none;            /* ne bloque pas les clics */
+  box-shadow:
+    0 0 14px rgba(var(--neon-rgb), 0.14),
+    0 0 2px  rgba(var(--neon-rgb), 0.28);
+}
+
+.dark .neon-frame-lite::after {
+  box-shadow:
+    0 0 18px rgba(var(--neon-rgb), 0.18),
+    0 0 2px  rgba(var(--neon-rgb), 0.34);
+}
+
+
+/* glow discret pour les lignes (pastel, très léger) */
+.recharts-curve.revenue-line {
+  filter: drop-shadow(0 4px 8px rgba(59,130,246,0.08)); /* bleu */
+}
+
+.recharts-curve.profit-line {
+  filter: drop-shadow(0 4px 8px rgba(16,185,129,0.08)); /* vert */
+}
+
+/* rendre les points un peu plus lisibles */
+.recharts-dot {
+  transition: transform .12s ease, opacity .12s ease;
+}
+
+.recharts-dot:hover {
+  transform: scale(1.15);
+  opacity: 1;
+}
+
+
