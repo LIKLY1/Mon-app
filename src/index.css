@@ -117,37 +117,3 @@
   opacity: 1;
 }
 
-:root{
-  --bg: #ffffff;
-  --text: #0f172a;        /* couleur texte light */
-  --placeholder: #94a3b8;
-}
-
-/* Quand tu ajoutes la classe "dark" sur <html> (darkMode: 'class') */
-.dark{
-  --bg: #0b1220;
-  --text: #f8fafc;        /* couleur texte dark */
-  --placeholder: #64748b;
-}
-
-/* Appliquer proprement sur les contrôles natifs */
-input, textarea, select {
-  color: var(--text);
-  background-color: var(--bg);
-  -webkit-text-fill-color: var(--text); /* Safari */
-}
-
-/* Placeholder */
-input::placeholder, textarea::placeholder {
-  color: var(--placeholder);
-  opacity: 1;
-}
-
-/* Forcer les icônes/SVG à suivre la couleur actuelle */
-svg { color: inherit; }
-svg [fill] { fill: currentColor; }
-svg [stroke] { stroke: currentColor; }
-
-/* Aide pour les formulaires natifs dans certains navigateurs */
-html { color-scheme: light dark; }
-
