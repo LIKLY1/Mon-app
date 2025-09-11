@@ -2098,7 +2098,7 @@ function KPIDetail({ detail }) {
 <ol className="space-y-2">
         {rows.map((r, i) => (
           <li key={i} className="flex justify-between">
-            <span className="font-semibold">{i + 1}. {r.label}</span>
+            <span className="font-semibold dark:text-black">{i + 1}. {r.label}</span>
             <span className="text-gray-800">{r.display}</span>
           </li>
         ))}
