@@ -38,7 +38,7 @@ const Card = ({ children, className, onClick }) => (
   <div
     onClick={onClick}
     className={classNames(
-      "bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-5",
+      "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-50 rounded-2xl shadow-lg p-5",
       onClick ? "cursor-pointer hover:shadow-xl transition-transform hover:-translate-y-0.5" : "",
       className
     )}
@@ -1874,9 +1874,9 @@ function Dashboard({
             </div>
 
             {/* Infos importantes */}
-            <div className="w-64 bg-zinc-50 p-4 rounded shadow overflow-auto">
-              <h4 className="font-semibold mb-2">Infos importantes</h4>
-              <div className="text-sm text-zinc-700 space-y-1">
+            <div className="w-64 bg-zinc-50 dark:bg-zinc-800 p-4 rounded shadow overflow-auto">
+  <h4 className="font-semibold mb-2">Infos importantes</h4>
+  <div className="text-sm text-zinc-700 dark:text-zinc-200 space-y-1">
                 {selectedGraph.key === "ventesParMois" && (
                   <>
                     <div>Total revenu: {formatMoney(selectedGraph.data.reduce((sum, d) => sum + (d.revenu || 0), 0))}</div>
@@ -2012,10 +2012,13 @@ function KPIDetail({ detail }) {
       .slice(0, 3);
 
     return (
-      <div className="grid gap-10 p-6 bg-white rounded-lg shadow-md">
-        <h3 className="text-2x1 font-bold text-zinc-800 mb-2">{title}</h3>
-        <div className="text-base text-black flex items-center gap-1">
-        <span className="text-blue-500">ℹ️</span> {descriptions[defKey]}
+  <div className="grid gap-10 p-6 bg-white dark:bg-zinc-900 rounded-lg shadow-md">
+    <h3 className="text-2xl font-bold text-zinc-800 dark:text-zinc-50 mb-2">{title}</h3>
+    <div className="text-base text-zinc-700 dark:text-zinc-300 flex items-center gap-1">
+      <span className="text-blue-500">ℹ️</span> {descriptions[defKey]}
+    </div>
+
+    <div className="text-sm text-zinc-500 dark:text-zinc-400 mb-4">{rankingDescriptions[defKey]}</div>
         </div>
         
 
@@ -2026,13 +2029,13 @@ function KPIDetail({ detail }) {
             const achatTotal = (a.prixAchat || 0) * q;
             const profit = revenuTotal - achatTotal;
             return (
-              <li key={a.id} className="border p-3 rounded-lg flex justify-between items-center">
-                <div>
-                  <div className="font-medium">{a.nom}</div>
-                  <div className="text-xs text-zinc-500">
-                    {formatDate(a.dateRevente)} • {a.lieuRevente || "—"}
-                  </div>
-                </div>
+             <li key={a.id} className="border border-zinc-200 dark:border-zinc-800 p-3 rounded-lg flex justify-between items-center">
+  <div>
+    <div className="font-medium">{a.nom}</div>
+    <div className="text-xs text-zinc-500 dark:text-zinc-400">
+      {formatDate(a.dateRevente)} • {a.lieuRevente || "—"}
+    </div>
+  </div>
                 <div className="text-right">
                   <div>{formatMoney(revenuTotal)}</div>
                   <div className={profit >= 0 ? "text-emerald-600" : "text-red-600"}>
@@ -2101,7 +2104,7 @@ function KPIDetail({ detail }) {
         {rows.map((r, i) => (
           <li key={i} className="flex justify-between">
             <span className="font-semibold">{i + 1}. {r.label}</span>
-            <span className="text-gray-800">{r.display}</span>
+            <span className="text-gray-800 dark:text-gray-100">{r.display}</span>
           </li>
         ))}
         {rows.length === 0 && (
