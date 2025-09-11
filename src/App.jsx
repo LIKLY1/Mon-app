@@ -65,16 +65,30 @@ const Field = ({ label, required=false, children }) => (
     {children}
   </label>
 );
-const Input = (props) => (
-  <input {...props} className={classNames("w-full rounded-xl border px-3 py-2 bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-700 outline-none focus:ring-2 ring-zinc-300 dark:ring-zinc-600", props.className)} />
+const Input = ({ className = '', ...props }) => (
+  <input
+    {...props}
+    className={classNames(
+      'w-full rounded-xl border px-3 py-2 bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-700 outline-none focus:ring-2 ring-zinc-300 dark:ring-zinc-600',
+      'text-zinc-900 dark:text-zinc-50 placeholder-zinc-400 dark:placeholder-zinc-500',
+      className
+    )}
+  />
 );
-const Select = ({ options, ...props }) => (
-  <select {...props} className="w-full rounded-xl border px-3 py-2 bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-700 outline-none focus:ring-2 ring-zinc-300 dark:ring-zinc-600">
-    {options.map((o) => (
-      <option key={o} value={o}>{o}</option>
-    ))}
+
+const Select = ({ options = [], className = '', ...props }) => (
+  <select
+    {...props}
+    className={classNames(
+      'w-full rounded-xl border px-3 py-2 bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-700 outline-none focus:ring-2 ring-zinc-300 dark:ring-zinc-600',
+      'text-zinc-900 dark:text-zinc-50',
+      className
+    )}
+  >
+    {options.map(o => <option key={o} value={o} className="text-zinc-900 dark:text-zinc-50">{o}</option>)}
   </select>
 );
+
 export const Button = ({ children, variant="solid", icon: Icon, className, neon=false, ...props }) => {
   const variants = {
     solid: "bg-[#0F766E] text-white hover:bg-[#0C5D55] btn-neon", // couleur néon
@@ -1944,17 +1958,25 @@ function Modal({ children, onClose }) {
   );
 }
 
-function KPI({ label, value, money=true, suffix="", positive=false, onClick }) {
-  const display = money ? formatMoney(value) : (value ?? 0) + (suffix||"");
+function KPI({ label, value, money = true, suffix = "", positive = false, onClick }) {
+  const display = money ? formatMoney(value) : (value ?? 0) + (suffix || "");
+
+  // Choix des couleurs en fonction des props et du mode sombre
+  const colorClass = positive
+    ? (value >= 0
+        ? "text-emerald-600 dark:text-emerald-400"
+        : "text-red-600 dark:text-red-400")
+    : "text-zinc-900 dark:text-zinc-50"; // fallback neutre
+
   return (
     <Card onClick={onClick} className="neon-frame-lite w-full h-28 grid place-items-center">
       <div className="grid gap-1 place-items-center text-center">
-        <span className="text-sm text-zinc-500">{label}</span>
+        <span className="text-sm text-zinc-500 dark:text-zinc-300">{label}</span>
         <motion.div
-          initial={{ opacity:0, y:6 }}
-          animate={{ opacity:1, y:0 }}
-          key={label+"-"+String(value)}
-          className={(positive ? (value>=0?"text-emerald-600":"text-red-600") : "") + " text-2xl font-semibold"}
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          key={label + "-" + String(value)}
+          className={classNames(colorClass, "text-2xl font-semibold")}
         >
           {display}
         </motion.div>
@@ -1962,6 +1984,7 @@ function KPI({ label, value, money=true, suffix="", positive=false, onClick }) {
     </Card>
   );
 }
+
 
 function KPIDetail({ detail }) {
   const descriptions = {
