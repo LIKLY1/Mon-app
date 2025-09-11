@@ -864,7 +864,7 @@ setCatalogueCollapsed(false);
     {groupedCatalogByCategory.map(([categoryName, items]) => (
       <div key={categoryName} className="w-full">
         {/* Titre de section */}
-        <h3 className="text-lg font-semibold mb-3 mt-6 border-b pb-1 min-h-[200px] flex flex-col justify-between">
+        <h3 className="text-lg font-semibold mb-3 mt-6 border-b pb-1">
           {categoryName}
         </h3>
 
