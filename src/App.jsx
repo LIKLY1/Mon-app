@@ -1961,30 +1961,34 @@ function Modal({ children, onClose }) {
 function KPI({ label, value, money = true, suffix = "", positive = false, onClick }) {
   const display = money ? formatMoney(value) : (value ?? 0) + (suffix || "");
 
-  // Choix des couleurs en fonction des props et du mode sombre
+  // couleur valeur principale
   const colorClass = positive
     ? (value >= 0
         ? "text-emerald-600 dark:text-emerald-400"
         : "text-red-600 dark:text-red-400")
-    : "text-zinc-900 dark:text-zinc-50"; // fallback neutre
+    : "text-zinc-900 dark:text-zinc-50"; // 👈 fallback toujours lisible
 
   return (
-    <Card onClick={onClick} className="neon-frame-lite w-full h-28 grid place-items-center">
+    <Card
+      onClick={onClick}
+      className="neon-frame-lite w-full h-28 grid place-items-center 
+                 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-50" // 👈 force fond + texte du container
+    >
       <div className="grid gap-1 place-items-center text-center">
         <span className="text-sm text-zinc-500 dark:text-zinc-300">{label}</span>
-       <motion.div
-          initial={{ opacity:0, y:6 }}
-          animate={{ opacity:1, y:0 }}
-          key={label+"-"+String(value)}
-          className={(positive ? (value>=0?"text-emerald-600":"text-red-600") : "") + " text-2xl font-semibold"}
+        <motion.div
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          key={label + "-" + String(value)}
+          className={classNames(colorClass, "text-2xl font-semibold")}
         >
           {display}
         </motion.div>
-
       </div>
     </Card>
   );
 }
+
 
 
 function KPIDetail({ detail }) {
