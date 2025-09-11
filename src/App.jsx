@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Bar, BarChart, CartesianGrid, Line, LineChart, Pie, PieChart, Tooltip,
   XAxis, YAxis, Legend, ResponsiveContainer, Cell
-} from "recharts"
+} from "recharts";
 import {
   Plus, LineChart as LineChartIcon, Package, CheckCircle2, Pencil, Trash2,
   ShoppingCart, Save, Search, ArrowRightLeft, Wallet, Layers, Users
@@ -37,18 +37,18 @@ function classNames(...xs) { return xs.filter(Boolean).join(" "); }
 const Card = ({ children, className, onClick }) => (
   <div
     onClick={onClick}
-    <div className={classNames(
-  "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-50 rounded-2xl shadow-lg p-5",
-  onClick ? "cursor-pointer hover:shadow-xl ..." : "",
-  className
-)}>
-
+    className={classNames(
+      "bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-5",
+      onClick ? "cursor-pointer hover:shadow-xl transition-transform hover:-translate-y-0.5" : "",
+      className
+    )}
+  >
     {children}
   </div>
 );
 const Badge = ({ children, variant = "default" }) => {
   const styles = {
-    default: "bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200",
+    default: "bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700",
     success: "bg-green-50 text-green-600 border border-green-600",
   };
 
@@ -66,38 +66,15 @@ const Field = ({ label, required=false, children }) => (
   </label>
 );
 const Input = (props) => (
-  <input
-    {...props}
-    className={classNames(
-      "w-full rounded-xl border px-3 py-2",
-      "bg-white dark:bg-zinc-950",
-      "border-zinc-200 dark:border-zinc-700",
-      "text-zinc-900 dark:text-zinc-50",            // <- force la couleur du texte
-      "placeholder-zinc-400 dark:placeholder-zinc-500", // <- couleur placeholder
-      "outline-none focus:ring-2 ring-zinc-300 dark:ring-zinc-600",
-      props.className
-    )}
-  />
+  <input {...props} className={classNames("w-full rounded-xl border px-3 py-2 bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-700 outline-none focus:ring-2 ring-zinc-300 dark:ring-zinc-600", props.className)} />
 );
-
 const Select = ({ options, ...props }) => (
-  <select
-    {...props}
-    className={classNames(
-      "w-full rounded-xl border px-3 py-2",
-      "bg-white dark:bg-zinc-950",
-      "border-zinc-200 dark:border-zinc-700",
-      "text-zinc-900 dark:text-zinc-50",
-      "outline-none focus:ring-2 ring-zinc-300 dark:ring-zinc-600",
-      props.className
-    )}
-  >
+  <select {...props} className="w-full rounded-xl border px-3 py-2 bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-700 outline-none focus:ring-2 ring-zinc-300 dark:ring-zinc-600">
     {options.map((o) => (
-      <option key={o} value={o} className="text-zinc-900 dark:text-zinc-50">{o}</option>
+      <option key={o} value={o}>{o}</option>
     ))}
   </select>
 );
-
 export const Button = ({ children, variant="solid", icon: Icon, className, neon=false, ...props }) => {
   const variants = {
     solid: "bg-[#0F766E] text-white hover:bg-[#0C5D55] btn-neon", // couleur néon
@@ -898,7 +875,7 @@ setCatalogueCollapsed(false);
 >
 
           {items.map((item) => (
- <button
+  <button
   key={item.id}
   type="button"
   onClick={() => chooseCatalogItem(item)}
@@ -1972,24 +1949,15 @@ function KPI({ label, value, money=true, suffix="", positive=false, onClick }) {
   return (
     <Card onClick={onClick} className="neon-frame-lite w-full h-28 grid place-items-center">
       <div className="grid gap-1 place-items-center text-center">
-       <span className="text-sm text-zinc-500 dark:text-zinc-300">{label}</span>
-<motion.div
+        <span className="text-sm text-zinc-500">{label}</span>
+        <motion.div
           initial={{ opacity:0, y:6 }}
           animate={{ opacity:1, y:0 }}
           key={label+"-"+String(value)}
-          <span className="text-sm text-zinc-500 dark:text-zinc-300">{label}</span>
-<motion.div
-  ...
-  className={classNames(
-    positive
-      ? (value >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400")
-      : "text-zinc-900 dark:text-zinc-50", // <- fallback si pas de coloration positive/négative
-    "text-2xl font-semibold"
-  )}
->
-  {display}
-</motion.div>
-
+          className={(positive ? (value>=0?"text-emerald-600":"text-red-600") : "") + " text-2xl font-semibold"}
+        >
+          {display}
+        </motion.div>
       </div>
     </Card>
   );
