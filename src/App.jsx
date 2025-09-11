@@ -1973,13 +1973,21 @@ function KPI({ label, value, money = true, suffix = "", positive = false, onClic
       <div className="grid gap-1 place-items-center text-center">
         <span className="text-sm text-zinc-500 dark:text-zinc-300">{label}</span>
         <motion.div
-          initial={{ opacity: 0, y: 6 }}
-          animate={{ opacity: 1, y: 0 }}
-          key={label + "-" + String(value)}
-          className={classNames(colorClass, "text-2xl font-semibold")}
-        >
-          {display}
-        </motion.div>
+  initial={{ opacity: 0, y: 6 }}
+  animate={{ opacity: 1, y: 0 }}
+  key={label + "-" + String(value)}
+  className={
+    (positive
+      ? (value >= 0
+          ? "text-emerald-600"
+          : "text-red-600")
+      : "text-zinc-900" // 👈 fallback neutre et lisible en clair
+    ) + " text-2xl font-semibold"
+  }
+>
+  {display}
+</motion.div>
+
       </div>
     </Card>
   );
