@@ -548,7 +548,7 @@ const profitParCategorie = useMemo(() => {
 </AnimatePresence>
 
       <footer className="max-w-7xl mx-auto px-4 py-8 text-xs opacity-70">
-        Fait pour simplifier ta compta d'achat–revente. Données stockées dans Supabase.
+        Fait pour simplifier ta compta d'achat–revente. 
       </footer>
     </div>
   );
