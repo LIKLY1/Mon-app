@@ -2022,14 +2022,14 @@ function KPIDetail({ detail }) {
         </div>
         
 
-        <li className="space-y-3">
+        <ul className="space-y-3">
           {topVentes.map((a) => {
             const q = a.quantite || 1;
             const revenuTotal = (a.prixRevente || 0) * q;
             const achatTotal = (a.prixAchat || 0) * q;
             const profit = revenuTotal - achatTotal;
             return (
-             <li key={a.id} className="border border-zinc-200 dark:border-zinc-800 p-3 rounded-lg flex justify-between items-center">
+             <ul key={a.id} className="border border-zinc-200 dark:border-zinc-800 p-3 rounded-lg flex justify-between items-center">
   <div>
     <div className="font-medium">{a.nom}</div>
     <div className="text-xs text-zinc-500 dark:text-zinc-400">
