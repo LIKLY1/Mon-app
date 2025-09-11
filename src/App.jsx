@@ -2093,26 +2093,35 @@ function KPIDetail({ detail }) {
 
 
   return (
-    <div className="grid gap-10 p-6 bg-white rounded-lg shadow-md">
-      <h3 className="text-2x1 font-bold text-zinc-800 mb-2">{title}</h3>
-      <div className="text-base text-black flex items-center gap-1">
-        <span className="text-blue-500">ℹ️</span> {descriptions[defKey]}
-      </div>
-
-      <div className="text-sm text-zinc-500 mb-4">{rankingDescriptions[defKey]}</div>
-<ol className="space-y-2">
-        {rows.map((r, i) => (
-          <li key={i} className="flex justify-between">
-            <span className="font-semibold">{i + 1}. {r.label}</span>
-            <span className="text-gray-800 dark:text-gray-100">{r.display}</span>
-          </li>
-        ))}
-        {rows.length === 0 && (
-          <li className="text-sm text-zinc-500">Aucune donnée à afficher.</li>
-        )}
-      </ol>
+  <div className="grid gap-10 p-6 bg-white dark:bg-zinc-900 rounded-lg shadow-md">
+    <h3 className="text-2xl font-bold text-zinc-800 dark:text-zinc-50 mb-2">{title}</h3>
+    <div className="text-base text-zinc-700 dark:text-zinc-300 flex items-center gap-1">
+      <span className="text-blue-500">ℹ️</span> {descriptions[defKey]}
     </div>
-  );
+
+    <div className="text-sm text-zinc-500 dark:text-zinc-400 mb-4">{rankingDescriptions[defKey]}</div>
+
+    <ul className="space-y-3">
+      {topVentes.map((a) => {
+        const q = a.quantite || 1;
+        return (
+          <li
+            key={a.id}
+            className="border border-zinc-200 dark:border-zinc-800 p-3 rounded-lg flex justify-between items-center"
+          >
+            <div>
+              <div className="font-medium">{a.nom}</div>
+              <div className="text-xs text-zinc-500 dark:text-zinc-400">
+                {formatDate(a.dateRevente)} • {a.lieuRevente || "—"}
+              </div>
+            </div>
+          </li>
+        );
+      })}
+    </ul>
+  </div>
+);
+
 }
 
 
