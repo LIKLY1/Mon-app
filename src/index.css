@@ -116,4 +116,30 @@
   transform: scale(1.15);
   opacity: 1;
 }
+/* NE PAS définir --bg / --text globalement, juste cibler les champs de formulaire */
+
+input, textarea, select {
+  color: #0f172a; /* light */
+  background-color: #ffffff;
+}
+
+.dark input,
+.dark textarea,
+.dark select {
+  color: #f8fafc;       /* texte lisible sur fond sombre */
+  background-color: #0b1220; /* fond sombre pour les champs */
+}
+
+/* Placeholder uniquement */
+input::placeholder,
+textarea::placeholder {
+  color: #94a3b8; /* light */
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #64748b; /* dark */
+}
+
+/* Important : limiter aux inputs → n'affecte pas les graphiques */
 
