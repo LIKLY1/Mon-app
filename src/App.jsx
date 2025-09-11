@@ -875,45 +875,39 @@ setCatalogueCollapsed(false);
 >
 
           {items.map((item) => (
-  <button
-    key={item.id}
-    type="button"
-    onClick={() => chooseCatalogItem(item)}
-    className={classNames(
-      "rounded-2xl overflow-hidden border shadow-sm hover:shadow-md transition text-left",
-      "border-black/70",
-      "flex flex-col h-full", // uniformisation
-      f.nom === item.nom ? "ring-2 ring-amber-400" : ""
-    )}
-  >
-    {/* Image avec ratio fixe */}
-    <div className="aspect-video bg-zinc-100 flex items-center justify-center overflow-hidden">
-  {item.image_url ? (
-    <img
-      src={item.image_url}
-      alt={item.nom}
-      className="w-full h-full object-cover"
-      loading="lazy"
-    />
-  ) : (
-    <div className="text-xs text-zinc-400 p-3">Pas d'image</div>
+ <button
+  key={item.id}
+  type="button"
+  onClick={() => chooseCatalogItem(item)}
+  className={classNames(
+    // classes existantes
+    "rounded-2xl overflow-hidden border shadow-sm hover:shadow-md transition text-left",
+    "border-black/70",
+    // <-- Ajouté : forcer le bouton à occuper la largeur de la cellule et permettre le shrink
+    "flex flex-col h-full w-full min-w-0",
+    f.nom === item.nom ? "ring-2 ring-amber-400" : ""
   )}
-</div>
+>
+  <div className="aspect-video bg-zinc-100 flex items-center justify-center overflow-hidden w-full">
+    {item.image_url ? (
+      <img src={item.image_url} alt={item.nom} className="w-full h-full object-cover" loading="lazy" />
+    ) : (
+      <div className="text-xs text-zinc-400 p-3">Pas d'image</div>
+    )}
+  </div>
 
+  {/* <-- Ajouté : w-full + min-w-0 + overflow-hidden pour forcer largeur et permettre truncate */}
+  <div
+    className="px-3 py-2 font-medium h-12 flex items-center w-full min-w-0 overflow-hidden"
+    style={{ backgroundColor: "#A8DADC", color: "white" }}
+  >
+    {/* <-- simplify : always truncate and show full value on hover via title */}
+    <span className="truncate" title={item.nom}>
+      {item.nom}
+    </span>
+  </div>
+</button>
 
-    {/* Barre jaune avec hauteur fixe */}
-    <div className="px-3 py-2 font-medium h-12 flex items-center"
-     style={{ backgroundColor: "#A8DADC", color: "white" }}>
-
-  <span className={classNames(f.nom === item.nom ? "whitespace-normal" : "truncate")}>
-    {item.nom}
-  </span>
-</div>
-
-
-
-
-  </button>
 ))}
 
         </div>
