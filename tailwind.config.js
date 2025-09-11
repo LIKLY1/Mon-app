@@ -5,3 +5,8 @@ export default {
   },
   plugins: [],
 }
+module.exports = {
+  darkMode: 'media', // ou 'class'
+  theme: { extend: {} },
+  plugins: [],
+}
