@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Bar, BarChart, CartesianGrid, Line, LineChart, Pie, PieChart, Tooltip,
   XAxis, YAxis, Legend, ResponsiveContainer, Cell
-} from "recharts";
+} from "recharts";g
 import {
   Plus, LineChart as LineChartIcon, Package, CheckCircle2, Pencil, Trash2,
   ShoppingCart, Save, Search, ArrowRightLeft, Wallet, Layers, Users
@@ -864,7 +864,7 @@ setCatalogueCollapsed(false);
     {groupedCatalogByCategory.map(([categoryName, items]) => (
       <div key={categoryName} className="w-full">
         {/* Titre de section */}
-        <h3 className="text-lg font-semibold mb-3 mt-6 border-b pb-1">
+        <h3 className="text-lg font-semibold mb-3 mt-6 border-b pb-1 min-h-[200px] flex flex-col justify-between">
           {categoryName}
         </h3>
 
