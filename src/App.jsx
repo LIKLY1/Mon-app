@@ -31,8 +31,6 @@ const CATALOGUE = [
 
 ];
 
-<link rel="icon" href="/logo.ico" />
-
 
 // --- Tiny UI helpers ---
 function classNames(...xs) { return xs.filter(Boolean).join(" "); }
