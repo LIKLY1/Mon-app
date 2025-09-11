@@ -2022,7 +2022,7 @@ function KPIDetail({ detail }) {
         </div>
         
 
-        <ul className="space-y-3">
+        <li className="space-y-3">
           {topVentes.map((a) => {
             const q = a.quantite || 1;
             const revenuTotal = (a.prixRevente || 0) * q;
