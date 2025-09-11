@@ -2024,9 +2024,9 @@ function KPIDetail({ detail }) {
             const achatTotal = (a.prixAchat || 0) * q;
             const profit = revenuTotal - achatTotal;
             return (
-          <li key={a.id} className="border border-zinc-200 dark:border-zinc-700 bg-red-500 dark:bg-green-700 p-3 rounded-lg flex justify-between items-center">
+          <li key={a.id} className="border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-3 rounded-lg flex justify-between items-center">
             <div>
-              <div className="font-medium text-black dark:text-yellow-300">{a.nom}</div>
+              <div className="font-medium text-zinc-900 dark:text-zinc-50">{a.nom}</div>
               <div className="text-xs text-zinc-500 dark:text-zinc-400">
                 {formatDate(a.dateRevente)} • {a.lieuRevente || "—"}
               </div>
