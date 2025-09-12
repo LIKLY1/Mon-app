@@ -1534,20 +1534,22 @@ const handleImport = async () => {
       <Card>
         <div className="overflow-x-auto">
           <table className="w-full text-base">
-            <thead className="text-left text-zinc-500">
-              <tr>
-                <th className="py-3 pr-4">Article</th>
-                <th className="py-3 pr-4">Catégorie</th>
-                <th className="py-3 pr-4">Date d'achat</th>
-                <th className="py-3 pr-4">Lieu d'achat</th>
-                <th className="py-3 pr-4">Prix Achat</th>
-                <th className="py-3 pr-4">Date revente</th>
-                <th className="py-3 pr-4">Lieu revente</th>
-                <th className="py-3 pr-4">Prix revente</th>
-                <th className="py-3 pr-4">Profit</th>
-                <th className="py-3 pr-4">Actions</th>
-              </tr>
-            </thead>
+            {/* thead (extrait) */}
+<thead className="text-left text-zinc-500">
+  <tr>
+    <th className="py-3 pr-4">Article</th>
+    <th className="py-3 pr-4 hidden sm:table-cell">Catégorie</th>
+    <th className="py-3 pr-4 hidden sm:table-cell">Date d'achat</th>
+    <th className="py-3 pr-4 hidden sm:table-cell">Lieu d'achat</th>
+    <th className="py-3 pr-4">Prix Achat</th>
+    <th className="py-3 pr-4 hidden sm:table-cell">Date revente</th>
+    <th className="py-3 pr-4 hidden sm:table-cell">Lieu revente</th>
+    <th className="py-3 pr-4 hidden sm:table-cell">Prix revente</th>
+    <th className="py-3 pr-4">Profit</th>
+    <th className="py-3 pr-4">Actions</th>
+  </tr>
+</thead>
+
             <tbody>
               {articles.map((a) => {
                 const achat = a.prixAchat || 0;
