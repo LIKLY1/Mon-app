@@ -1609,8 +1609,9 @@ const handleImport = async () => {
   </div>
 
   {/* TABLEAU DESKTOP (sm+) */}
-  <div className="hidden sm:block overflow-x-auto">
-    <table className="w-full text-sm sm:text-base">
+  <div className="overflow-x-auto w-full">
+  <table className="min-w-full text-xs sm:text-sm md:text-base whitespace-nowrap mx-auto">
+
       <thead className="text-left text-zinc-500">
         <tr>
           <th className="py-3 pr-4">Article</th>
