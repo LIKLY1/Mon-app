@@ -528,7 +528,6 @@ const profitParCategorie = useMemo(() => {
       )}
     </div>
   </div>
-</header>
 
 
 
