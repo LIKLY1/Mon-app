@@ -1463,20 +1463,16 @@ const handleImport = async () => {
           </div>
 
           {/* Bouton Importer */}
-<div className="flex items-end ml-auto">
-  <Button
-  onClick={() => setShowImportModal(true)}
-  variant="solid"
->
-  Importer des données
-</Button>
-{/* bouton mobile pour montrer/masquer les filtres */}
-<div className="sm:hidden w-full mb-3">
-  <div className="flex gap-2">
-    <Button variant="outline" onClick={() => setShowFilters(s => !s)}>
+<div className="w-full flex justify-center sm:justify-end items-center gap-2 mt-2 sm:mt-0">
+  <Button variant="outline" onClick={() => setShowImportModal(true)}>
+    Importer données
+  </Button>
+
+  {/* Boutons mobile */}
+  <div className="sm:hidden flex gap-2">
+    <Button variant="outline" onClick={() => setShowFilters((s) => !s)}>
       {showFilters ? "Masquer filtres" : "Afficher filtres"}
     </Button>
-
     <Button
       variant="subtle"
       onClick={() =>
