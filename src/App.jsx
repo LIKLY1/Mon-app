@@ -13,7 +13,6 @@ import { supabase } from "./supabaseClient";
 import Papa from "papaparse";
 import AuthPage from "./AuthPage";
 import logo from "./logo.png";
-import { Analytics } from "@vercel/analytics/next";
 
 
 // --- Constants / Types ---
