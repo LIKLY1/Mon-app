@@ -13,6 +13,8 @@ import { supabase } from "./supabaseClient";
 import Papa from "papaparse";
 import AuthPage from "./AuthPage";
 import logo from "./logo.png";
+import { gaEvent } from "./analytics/gtag";
+
 
 
 // --- Constants / Types ---
