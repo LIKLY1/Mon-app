@@ -14,6 +14,28 @@ import Papa from "papaparse";
 import AuthPage from "./AuthPage";
 import logo from "./logo.png";
 
+// ---------- GA helper (à coller après les imports) ----------
+const GA_MEASUREMENT_ID = "G-R0DH0B2TLT"; // optionnel : garder celui de index.html ou utiliser une var d'env
+
+function gaAvailable() {
+  return typeof window !== "undefined" && typeof window.gtag === "function";
+}
+
+function gaEvent(name, params = {}) {
+  if (!gaAvailable()) return;
+  try { window.gtag("event", name, params); } catch (e) { console.warn("GA event error", e); }
+}
+
+function gaSetUserId(id) {
+  if (!gaAvailable()) return;
+  try { window.gtag("set", { user_id: id }); } catch (e) { console.warn("GA set user_id error", e); }
+}
+
+function gaSetUserProperties(props = {}) {
+  if (!gaAvailable()) return;
+  try { window.gtag("set", { user_properties: props }); } catch (e) { console.warn("GA set user_properties error", e); }
+}
+// -------------------------------------------------------------
 
 
 // --- Constants / Types ---
@@ -139,15 +161,18 @@ export default function AppComptaAchatRevente() {
   to: "",   // fin (YYYY-MM-DD)
 });
   useEffect(() => {
-     console.log("GA4 page_view déclenché", vue);
-  if (typeof window !== "undefined" && window.gtag) {
+  // Déclenche un page_view GA4 quand la 'vue' change
+  if (gaAvailable()) {
     window.gtag("event", "page_view", {
       page_title: document.title,
       page_location: window.location.href,
       page_path: window.location.pathname + (vue ? `?view=${vue}` : ""),
+      view_name: vue,          // CUSTOM PARAM - à enregistrer côté GA4 si tu veux l'utiliser en rapport
+      debug_mode: false       // true => enverra l'événement dans DebugView (utile pour dev)
     });
   }
 }, [vue]);
+
 
 
       
@@ -174,6 +199,21 @@ useEffect(() => {
   const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
     setUser(session?.user ?? null);
   });
+// après setUser(u) : (extrait à insérer dans ton useEffect d'auth)
+if (u && gaAvailable()) {
+  // user.id sur Supabase est un UUID — si tu veux être hyper-safe : hashe-le côté client/serveur.
+  gaSetUserId(u.id);
+
+  // envoie des propriétés non-PII (exemples) — adapte selon ton metadata
+  gaSetUserProperties({
+    provider: u?.app_metadata?.provider || "unknown",
+    created_at: u?.created_at ? u.created_at.slice(0,10) : undefined
+  });
+} else if (!u && gaAvailable()) {
+  // logout -> retire user_id
+  gaSetUserId(null);
+  gaSetUserProperties({});
+}
 
   return () => {
     mounted = false;
@@ -357,6 +397,13 @@ const profitParCategorie = useMemo(() => {
   const { data, error } = await supabase.from("articles").insert(payloadWithOwner);
   if (error) { console.error("Insert error:", error); return { error }; }
   await fetchArticles();
+          gaEvent("add_article", {
+      item_name: payload.nom,
+      category: payload.categorie,
+      price: Number(payload.prixAchat || 0),
+      quantity: Number(payload.quantite || 1),
+    });
+
   return { data };
 }
 
@@ -368,6 +415,12 @@ const profitParCategorie = useMemo(() => {
     alert("Erreur: id manquant pour la mise à jour.");
     return { error: new Error("missing id") };
   }
+        gaEvent("update_article", {
+      article_id: data[0].id,
+      vendu: data[0].vendu ? "yes" : "no",
+      prixRevente: data[0].prixRevente != null ? Number(data[0].prixRevente) : undefined,
+    });
+
 
   console.log("🔍 updateArticle -> id:", id, "patch:", patch);
 
@@ -427,6 +480,8 @@ const profitParCategorie = useMemo(() => {
     return { error };
   } else {
     await fetchArticles();
+        gaEvent("delete_article", { article_id: id });
+
     return { data };
   }
 }
@@ -1342,6 +1397,8 @@ const handleImport = async () => {
 
     // recharge automatiquement le tableau (ta fonction existante)
     fetchArticles();
+          gaEvent("import_csv", { rows_imported: (data || []).length });
+
   }
 };
 
