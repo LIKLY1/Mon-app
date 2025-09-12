@@ -139,6 +139,7 @@ export default function AppComptaAchatRevente() {
   to: "",   // fin (YYYY-MM-DD)
 });
   useEffect(() => {
+     console.log("GA4 page_view déclenché", vue);
   if (typeof window !== "undefined" && window.gtag) {
     window.gtag("event", "page_view", {
       page_title: document.title,
