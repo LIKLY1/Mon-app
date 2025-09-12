@@ -1,4 +1,5 @@
 // App.jsx
+// App.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -1462,8 +1463,7 @@ const handleImport = async () => {
           </div>
 
           {/* Bouton Importer */}
-<div className="flex flex-col sm:flex-row justify-center sm:justify-end items-center gap-2 w-full sm:w-auto">
-
+<div className="flex items-end ml-auto">
   <Button
   onClick={() => setShowImportModal(true)}
   variant="solid"
@@ -1616,7 +1616,7 @@ const handleImport = async () => {
 
   {/* TABLEAU DESKTOP (sm+) */}
   <div className="hidden sm:block overflow-x-auto">
-    <table className="w-full text-xs sm:text-sm md:text-base whitespace-nowrap">
+    <table className="w-full text-sm sm:text-base">
       <thead className="text-left text-zinc-500">
         <tr>
           <th className="py-3 pr-4">Article</th>
