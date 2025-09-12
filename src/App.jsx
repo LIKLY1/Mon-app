@@ -123,6 +123,20 @@ export const Button = ({ children, variant="solid", icon: Icon, className, neon=
 export default function AppComptaAchatRevente() {
   const [articles, setArticles] = useState([]);
   const [vue, setVue] = useState("dashboard");
+  useEffect(() => {
+  initGA();
+  pageview(window.location.pathname + `?view=${vue}`);
+}, []);
+
+useEffect(() => {
+  pageview(window.location.pathname + `?view=${vue}`);
+  gaEvent({
+    action: "change_view",
+    category: "navigation",
+    label: vue,
+  });
+}, [vue]);
+
   const [filtre, setFiltre] = useState({
   q: "",
   categorie: "toutes",
@@ -827,6 +841,8 @@ function chooseCatalogItem(item) {
     }));
 
     await onSubmit(articles);
+    
+
 
     // reset du formulaire
     setF({
@@ -1534,7 +1550,9 @@ const handleImport = async () => {
       >
         Vendre
       </Button>
+
     )}
+    
     <Button
       variant="info"
       icon={Pencil}
