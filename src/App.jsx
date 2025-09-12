@@ -1463,16 +1463,20 @@ const handleImport = async () => {
           </div>
 
           {/* Bouton Importer */}
-<div className="w-full flex justify-center sm:justify-end items-center gap-2 mt-2 sm:mt-0">
-  <Button variant="outline" onClick={() => setShowImportModal(true)}>
-    Importer données
-  </Button>
-
-  {/* Boutons mobile */}
-  <div className="sm:hidden flex gap-2">
-    <Button variant="outline" onClick={() => setShowFilters((s) => !s)}>
+<div className="flex items-end ml-auto">
+  <Button
+  onClick={() => setShowImportModal(true)}
+  variant="solid"
+>
+  Importer des données
+</Button>
+{/* bouton mobile pour montrer/masquer les filtres */}
+<div className="sm:hidden w-full mb-3">
+  <div className="flex gap-2">
+    <Button variant="outline" onClick={() => setShowFilters(s => !s)}>
       {showFilters ? "Masquer filtres" : "Afficher filtres"}
     </Button>
+
     <Button
       variant="subtle"
       onClick={() =>
@@ -1490,6 +1494,8 @@ const handleImport = async () => {
       Réinitialiser
     </Button>
   </div>
+</div>
+
 </div>
 
 
@@ -1609,9 +1615,8 @@ const handleImport = async () => {
   </div>
 
   {/* TABLEAU DESKTOP (sm+) */}
-  <div className="overflow-x-auto w-full">
-  <table className="min-w-full text-xs sm:text-sm md:text-base whitespace-nowrap mx-auto">
-
+  <div className="hidden sm:block overflow-x-auto">
+    <table className="w-full text-sm sm:text-base">
       <thead className="text-left text-zinc-500">
         <tr>
           <th className="py-3 pr-4">Article</th>
