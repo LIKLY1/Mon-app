@@ -1492,8 +1492,6 @@ const handleImport = async () => {
   </div>
 </div>
 
-</div>
-
 
           {/* Filtres */}
         {/* Filtres (repliable sur mobile, visible sur sm+) */}
