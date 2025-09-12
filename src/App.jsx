@@ -138,6 +138,16 @@ export default function AppComptaAchatRevente() {
   from: "", // début (YYYY-MM-DD)
   to: "",   // fin (YYYY-MM-DD)
 });
+  useEffect(() => {
+  if (typeof window !== "undefined" && window.gtag) {
+    window.gtag("event", "page_view", {
+      page_title: document.title,
+      page_location: window.location.href,
+      page_path: window.location.pathname + (vue ? `?view=${vue}` : ""),
+    });
+  }
+}, [vue]);
+
 
       
       
@@ -145,33 +155,9 @@ export default function AppComptaAchatRevente() {
 
 // ajout dans AppComptaAchatRevente (au même niveau que articles, vue, etc.)
 const [user, setUser] = useState(null);
-  // -- tracking des pages vues --
-useEffect(() => {
-  // 1) Envoi vers Plausible (si tu as mis le script dans index.html)
-  if (typeof window !== 'undefined' && window.plausible) {
-    window.plausible('pageview');
-  }
-
-  // 2) Envoi vers Supabase (si utilisateur connecté et table page_views créée)
-  async function sendPageViewToSupabase() {
-    if (!user) return; // on ne log que les users connectés
-    try {
-      await supabase.from('page_views').insert([{
-        user_id: user.id,
-        path: window.location.pathname + (vue ? `?view=${vue}` : ''),
-        title: document.title,
-        referrer: document.referrer || null,
-        user_agent: navigator.userAgent || null,
-      }]);
-    } catch (e) {
-      console.debug('Analytics insert failed', e?.message || e);
-    }
-  }
-
-  sendPageViewToSupabase();
-}, [vue, user]); 
 
 const [logoutMsg, setLogoutMsg] = useState(null);
+  
 
 
 // initialise la session / écoute les changements d'auth
