@@ -13,7 +13,6 @@ import { supabase } from "./supabaseClient";
 import Papa from "papaparse";
 import AuthPage from "./AuthPage";
 import logo from "./logo.png";
-import { gaEvent } from "./analytics/gtag";
 
 
 
@@ -123,19 +122,6 @@ export const Button = ({ children, variant="solid", icon: Icon, className, neon=
 export default function AppComptaAchatRevente() {
   const [articles, setArticles] = useState([]);
   const [vue, setVue] = useState("dashboard");
-  useEffect(() => {
-  initGA();
-  pageview(window.location.pathname + `?view=${vue}`);
-}, []);
-
-useEffect(() => {
-  pageview(window.location.pathname + `?view=${vue}`);
-  gaEvent({
-    action: "change_view",
-    category: "navigation",
-    label: vue,
-  });
-}, [vue]);
 
   const [filtre, setFiltre] = useState({
   q: "",
