@@ -487,36 +487,49 @@ const profitParCategorie = useMemo(() => {
   return (
    <div className="min-h-screen bg-gradient-to-b from-zinc-50 to-zinc-100 dark:from-zinc-950 dark:to-zinc-900 text-zinc-900 dark:text-zinc-50">
      <header className="sticky top-0 z-10 backdrop-blur bg-white/80 dark:bg-zinc-900/80 border-b border-zinc-200 dark:border-zinc-800">
-  <div className="max-w-7xl mx-auto px-4 py-3 flex items-center gap-3">
-    <img src={logo} className="h-16 w-auto" />
-<h1 className="font-semibold text-lg">MoneyTrackR</h1>
+  <div className="max-w-7xl mx-auto px-4 py-3 flex flex-col sm:flex-row items-center gap-3">
+    {/* Logo + titre */}
+    <div className="flex items-center gap-3">
+      <img src={logo} className="h-10 sm:h-16 w-auto" alt="MoneyTrackR" />
+      {/* On cache le titre sur mobile */}
+      <h1 className="font-semibold text-lg hidden sm:block">MoneyTrackR</h1>
+    </div>
 
-
+    {/* Actions */}
     <div className="ml-auto flex items-center gap-2">
-      <Button icon={Plus} onClick={() => setVue("nouvel")}>
-        Nouvel achat
+      <Button
+        icon={Plus}
+        className="px-2.5 py-1.5 sm:px-3.5 sm:py-2"
+        onClick={() => setVue("nouvel")}
+      >
+        <span className="hidden sm:inline">Nouvel achat</span>
       </Button>
 
-      {/* Bouton Connexion / Déconnexion */}
       {user ? (
         <Button
-  variant="outline"
-  onClick={async () => {
-    await supabase.auth.signOut();
-    setLogoutMsg("Déconnecté avec succès ✅");
-    setVue("auth");
-  }}
->
-  Déconnexion
-</Button>
-
+          variant="outline"
+          className="px-2.5 py-1.5 sm:px-3.5 sm:py-2"
+          onClick={async () => {
+            await supabase.auth.signOut();
+            setLogoutMsg("Déconnecté avec succès ✅");
+            setVue("auth");
+          }}
+        >
+          <span className="hidden sm:inline">Déconnexion</span>
+        </Button>
       ) : (
-        <Button variant="outline" onClick={() => setVue("auth")}>
-          Connexion
+        <Button
+          variant="outline"
+          className="px-2.5 py-1.5 sm:px-3.5 sm:py-2"
+          onClick={() => setVue("auth")}
+        >
+          <span className="hidden sm:inline">Connexion</span>
         </Button>
       )}
     </div>
   </div>
+</header>
+
 
 
   <nav className="max-w-7xl mx-auto px-4 pb-3">
