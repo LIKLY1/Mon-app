@@ -1299,6 +1299,7 @@ function Inventaire({ articles, filtre, setFiltre, onEdit, onDelete, setArticles
   const [showImportModal, setShowImportModal] = useState(false);
   const [importData, setImportData] = useState([]);
   const [successMessage, setSuccessMessage] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
 
   const parseDate = (str) => {
   if (!str) return null;
@@ -1468,187 +1469,235 @@ const handleImport = async () => {
 >
   Importer des données
 </Button>
+{/* bouton mobile pour montrer/masquer les filtres */}
+<div className="sm:hidden w-full mb-3">
+  <div className="flex gap-2">
+    <Button variant="outline" onClick={() => setShowFilters(s => !s)}>
+      {showFilters ? "Masquer filtres" : "Afficher filtres"}
+    </Button>
+
+    <Button
+      variant="subtle"
+      onClick={() =>
+        setFiltre({
+          q: "",
+          categorie: "toutes",
+          etat: "tous",
+          dateAchat: "",
+          dateRevente: "",
+          lieuAchat: "",
+          lieuRevente: "",
+        })
+      }
+    >
+      Réinitialiser
+    </Button>
+  </div>
+</div>
 
 </div>
 
 
           {/* Filtres */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-[900px] mx-auto w-full">
+        {/* Filtres (repliable sur mobile, visible sur sm+) */}
+<div className={`${showFilters ? "block" : "hidden sm:grid"} grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-[900px] mx-auto w-full`}>
 
-            {/* Recherche */}
-            <Field label="Recherche">
-              <Input
-                placeholder="Nom du produit"
-                value={filtre.q}
-                onChange={(e) => setFiltre((f) => ({ ...f, q: e.target.value }))}
-              />
-            </Field>
+  {/* Recherche */}
+  <Field label="Recherche">
+    <Input
+      placeholder="Nom du produit"
+      value={filtre.q || ""}
+      onChange={(e) => setFiltre((f) => ({ ...f, q: e.target.value }))}
+    />
+  </Field>
 
-            {/* Catégorie */}
-            <Field label="Catégorie">
-              <Select
-                value={filtre.categorie}
-                onChange={(e) => setFiltre((f) => ({ ...f, categorie: e.target.value }))}
-                options={["toutes", ...CATEGORIES]}
-              />
-            </Field>
+  {/* Catégorie */}
+  <Field label="Catégorie">
+    <Select
+      value={filtre.categorie || "toutes"}
+      onChange={(e) => setFiltre((f) => ({ ...f, categorie: e.target.value }))}
+      options={["toutes", ...CATEGORIES]}
+    />
+  </Field>
 
-            {/* Date achat */}
-            <Field label="Date d'achat">
-              <Input
-                type="date"
-                value={filtre.dateAchat || ""}
-                onChange={(e) => setFiltre((f) => ({ ...f, dateAchat: e.target.value }))}
-              />
-            </Field>
+  {/* Date achat */}
+  <Field label="Date d'achat">
+    <Input
+      type="date"
+      value={filtre.dateAchat || ""}
+      onChange={(e) => setFiltre((f) => ({ ...f, dateAchat: e.target.value }))}
+    />
+  </Field>
 
-            {/* Date revente */}
-            <Field label="Date de revente">
-              <Input
-                type="date"
-                value={filtre.dateRevente || ""}
-                onChange={(e) => setFiltre((f) => ({ ...f, dateRevente: e.target.value }))}
-              />
-            </Field>
+  {/* Date revente */}
+  <Field label="Date de revente">
+    <Input
+      type="date"
+      value={filtre.dateRevente || ""}
+      onChange={(e) => setFiltre((f) => ({ ...f, dateRevente: e.target.value }))}
+    />
+  </Field>
 
-            {/* Lieu achat */}
-            <Field label="Lieu d'achat">
-              <Input
-                value={filtre.lieuAchat || ""}
-                onChange={(e) => setFiltre((f) => ({ ...f, lieuAchat: e.target.value }))}
-              />
-            </Field>
+  {/* Lieu achat */}
+  <Field label="Lieu d'achat">
+    <Input
+      value={filtre.lieuAchat || ""}
+      onChange={(e) => setFiltre((f) => ({ ...f, lieuAchat: e.target.value }))}
+    />
+  </Field>
 
-            {/* Lieu vente */}
-            <Field label="Lieu de vente">
-              <Input
-                value={filtre.lieuRevente || ""}
-                onChange={(e) => setFiltre((f) => ({ ...f, lieuRevente: e.target.value }))}
-              />
-            </Field>
-          </div>
+  {/* Lieu vente */}
+  <Field label="Lieu de vente">
+    <Input
+      value={filtre.lieuRevente || ""}
+      onChange={(e) => setFiltre((f) => ({ ...f, lieuRevente: e.target.value }))}
+    />
+  </Field>
+</div>
+
         </div>{/* <-- fermé le flex qui contient onglets + filtres */}
       </div>{/* <-- fermé le sticky */}
 
       {/* === Tableau inventaire === */}
       <Card>
-        <div className="overflow-x-auto">
-          <table className="w-full text-base">
-            {/* thead (extrait) */}
-<thead className="text-left text-zinc-500">
-  <tr>
-    <th className="py-3 pr-4">Article</th>
-    <th className="py-3 pr-4 hidden sm:table-cell">Catégorie</th>
-    <th className="py-3 pr-4 hidden sm:table-cell">Date d'achat</th>
-    <th className="py-3 pr-4 hidden sm:table-cell">Lieu d'achat</th>
-    <th className="py-3 pr-4">Prix Achat</th>
-    <th className="py-3 pr-4 hidden sm:table-cell">Date revente</th>
-    <th className="py-3 pr-4 hidden sm:table-cell">Lieu revente</th>
-    <th className="py-3 pr-4 hidden sm:table-cell">Prix revente</th>
-    <th className="py-3 pr-4">Profit</th>
-    <th className="py-3 pr-4">Actions</th>
-  </tr>
-</thead>
+  {/* LISTE MOBILE (cartes) */}
+  <div className="block sm:hidden divide-y">
+    {articles.map((a) => {
+      const achat = a.prixAchat || 0;
+      const revenu = a.prixRevente != null ? a.prixRevente : null;
+      const profit = revenu != null ? revenu - achat : null;
+      return (
+        <div key={a.id} className="p-4 flex justify-between items-start">
+          <div className="min-w-0">
+            <div className="font-medium truncate">
+              {a.nom} {a.vendu && <Badge variant="success">Vendu</Badge>}
+            </div>
+            {a.taille && <div className="text-xs text-zinc-500 truncate">{a.taille}</div>}
+            <div className="text-xs text-zinc-500 truncate">{a.categorie} • {formatDate(a.dateAchat)}</div>
+            <div className="text-sm mt-1">
+              {formatMoney(achat)} •{" "}
+              {profit != null ? (
+                <span className={profit >= 0 ? "text-emerald-600" : "text-red-600"}>
+                  {formatMoney(profit)}
+                </span>
+              ) : (
+                <span className="text-zinc-400">—</span>
+              )}
+            </div>
+          </div>
 
-            <tbody>
-              {articles.map((a) => {
-                const achat = a.prixAchat || 0;
-                const revenuUnitaire = a.prixRevente != null ? a.prixRevente : null;
-                const revenuTotal = a.vendu && a.prixRevente != null ? a.prixRevente : null;
-                const profit = revenuTotal != null ? revenuTotal - achat : null;
+          <div className="flex flex-col items-end ml-3 gap-2">
+            {!a.vendu && (
+              <Button
+                variant="success"
+                icon={CheckCircle2}
+                onClick={() =>
+                  onEdit({
+                    ...a,
+                    dateRevente: a.dateRevente || new Date().toISOString().slice(0, 10),
+                  })
+                }
+              >
+                Vendre
+              </Button>
+            )}
 
-                return (
-                  <tr key={a.id} className="border-t border-zinc-200 dark:border-zinc-800">
-                    <td className="py-3 pr-4">
-                      <div className="font-medium">
-                        {a.nom} {a.vendu && <Badge variant="success">Vendu</Badge>}
-
-                      </div>
-                      {a.taille && <div className="text-xs text-zinc-500">{a.taille}</div>}
-                    </td>
-
-                    <td className="py-3 pr-4">
-                      {a.categorie}
-                      {a.sousCategorie ? ` • ${a.sousCategorie}` : ""}
-                    </td>
-
-                    <td className="py-3 pr-4">{formatDate(a.dateAchat)}</td>
-
-                    <td className="py-3 pr-4">
-                      {a.lieuAchat ? a.lieuAchat : <span className="text-zinc-400">—</span>}
-                    </td>
-
-                    <td className="py-3 pr-4">{formatMoney(achat)}</td>
-
-                    <td className="py-3 pr-4">
-                      {a.vendu && a.dateRevente ? formatDate(a.dateRevente) : <span className="text-zinc-400">—</span>}
-                    </td>
-
-                    <td className="py-3 pr-4">
-                      {a.vendu && a.lieuRevente ? a.lieuRevente : <span className="text-zinc-400">—</span>}
-                    </td>
-
-                    <td className="py-3 pr-4">
-                      {a.vendu && revenuUnitaire != null ? formatMoney(revenuTotal || 0) : <span className="text-zinc-400">—</span>}
-                    </td>
-
-                    <td className="py-3 pr-4">
-                      {profit != null ? (
-                        <span className={profit >= 0 ? "text-emerald-600" : "text-red-600"}>
-                          {formatMoney(profit)}
-                        </span>
-                      ) : (
-                        <span className="text-zinc-400">—</span>
-                      )}
-                    </td>
-
-<td className="py-3 pr-4">
-  <div className="flex gap-2">
-    {!a.vendu && (
-      <Button
-        variant="success"
-        icon={CheckCircle2}
-        onClick={() =>
-          onEdit({
-            ...a,
-            dateRevente:
-              a.dateRevente || new Date().toISOString().slice(0, 10),
-          })
-        }
-      >
-        Vendre
-      </Button>
-
-    )}
-    
-    <Button
-      variant="info"
-      icon={Pencil}
-      onClick={() => onEdit(a)}
-    >
-      Modifier
-    </Button>
-    <Button
-      variant="danger"
-      icon={Trash2}
-      onClick={() => onDelete(a.id)}
-    >
-      Suppr.
-    </Button>
-  </div>
-</td>
-</tr>
-);
-})}
-</tbody>
-</table>
-
-
-          {articles.length === 0 && (
-            <div className="py-10 text-center text-zinc-500">Aucun article. Ajoute ton premier achat 👇</div>
-          )}
+            <div className="flex gap-2">
+              <Button variant="info" icon={Pencil} onClick={() => onEdit(a)} />
+              <Button variant="danger" icon={Trash2} onClick={() => onDelete(a.id)} />
+            </div>
+          </div>
         </div>
-      </Card>
+      );
+    })}
+    {articles.length === 0 && <div className="p-6 text-center text-zinc-500">Aucun article. Ajoute ton premier achat 👇</div>}
+  </div>
+
+  {/* TABLEAU DESKTOP (sm+) */}
+  <div className="hidden sm:block overflow-x-auto">
+    <table className="w-full text-sm sm:text-base">
+      <thead className="text-left text-zinc-500">
+        <tr>
+          <th className="py-3 pr-4">Article</th>
+          <th className="py-3 pr-4">Catégorie</th>
+          <th className="py-3 pr-4">Date d'achat</th>
+          <th className="py-3 pr-4">Lieu d'achat</th>
+          <th className="py-3 pr-4">Prix Achat</th>
+          <th className="py-3 pr-4">Date revente</th>
+          <th className="py-3 pr-4">Lieu revente</th>
+          <th className="py-3 pr-4">Prix revente</th>
+          <th className="py-3 pr-4">Profit</th>
+          <th className="py-3 pr-4">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {articles.map((a) => {
+          const achat = a.prixAchat || 0;
+          const revenuUnitaire = a.prixRevente != null ? a.prixRevente : null;
+          const revenuTotal = a.vendu && a.prixRevente != null ? a.prixRevente : null;
+          const profit = revenuTotal != null ? revenuTotal - achat : null;
+
+          return (
+            <tr key={a.id} className="border-t border-zinc-200 dark:border-zinc-800">
+              <td className="py-3 pr-4">
+                <div className="font-medium">
+                  {a.nom} {a.vendu && <Badge variant="success">Vendu</Badge>}
+                </div>
+                {a.taille && <div className="text-xs text-zinc-500">{a.taille}</div>}
+              </td>
+
+              <td className="py-3 pr-4">
+                {a.categorie}
+                {a.sousCategorie ? ` • ${a.sousCategorie}` : ""}
+              </td>
+
+              <td className="py-3 pr-4">{formatDate(a.dateAchat)}</td>
+              <td className="py-3 pr-4">{a.lieuAchat ? a.lieuAchat : <span className="text-zinc-400">—</span>}</td>
+              <td className="py-3 pr-4">{formatMoney(achat)}</td>
+              <td className="py-3 pr-4">{a.vendu && a.dateRevente ? formatDate(a.dateRevente) : <span className="text-zinc-400">—</span>}</td>
+              <td className="py-3 pr-4">{a.vendu && a.lieuRevente ? a.lieuRevente : <span className="text-zinc-400">—</span>}</td>
+              <td className="py-3 pr-4">{a.vendu && revenuUnitaire != null ? formatMoney(revenuTotal || 0) : <span className="text-zinc-400">—</span>}</td>
+              <td className="py-3 pr-4">
+                {profit != null ? (
+                  <span className={profit >= 0 ? "text-emerald-600" : "text-red-600"}>{formatMoney(profit)}</span>
+                ) : (
+                  <span className="text-zinc-400">—</span>
+                )}
+              </td>
+
+              <td className="py-3 pr-4">
+                <div className="flex gap-2">
+                  {!a.vendu && (
+                    <Button
+                      variant="success"
+                      icon={CheckCircle2}
+                      onClick={() =>
+                        onEdit({
+                          ...a,
+                          dateRevente: a.dateRevente || new Date().toISOString().slice(0, 10),
+                        })
+                      }
+                    >
+                      Vendre
+                    </Button>
+                  )}
+
+                  <Button variant="info" icon={Pencil} onClick={() => onEdit(a)}>
+                    Modifier
+                  </Button>
+                  <Button variant="danger" icon={Trash2} onClick={() => onDelete(a.id)}>
+                    Suppr.
+                  </Button>
+                </div>
+              </td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  </div>
+</Card>
+
       {showImportModal && (
   <Modal title="Importer un tableau CSV" onClose={() => setShowImportModal(false)}>
     <Modal title="Importer un tableau CSV" onClose={() => setShowImportModal(false)}>
