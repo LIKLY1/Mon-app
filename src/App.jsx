@@ -487,25 +487,36 @@ const profitParCategorie = useMemo(() => {
   return (
    <div className="min-h-screen bg-gradient-to-b from-zinc-50 to-zinc-100 dark:from-zinc-950 dark:to-zinc-900 text-zinc-900 dark:text-zinc-50">
      <header className="sticky top-0 z-10 backdrop-blur bg-white/80 dark:bg-zinc-900/80 border-b border-zinc-200 dark:border-zinc-800">
-   <div className="flex items-center gap-3">
-    <img src={logo} className="h-10 sm:h-16 w-auto" alt="MoneyTrackR" />
-    {/* cacher le titre sur petits écrans pour gagner de la place */}
-    <h1 className="font-semibold text-lg hidden sm:block">MoneyTrackR</h1>
-  </div>
+  <div className="max-w-7xl mx-auto px-4 py-3 flex items-center gap-3">
+    <img src={logo} className="h-16 w-auto" />
+<h1 className="font-semibold text-lg">MoneyTrackR</h1>
 
 
-     <div className="ml-auto flex items-center gap-2">
-    <Button icon={Plus} className="px-2.5 py-1.5 sm:px-3.5 sm:py-2">
-      <span className="hidden sm:inline">Nouvel achat</span>
-    </Button>
+    <div className="ml-auto flex items-center gap-2">
+      <Button icon={Plus} onClick={() => setVue("nouvel")}>
+        Nouvel achat
+      </Button>
+
       {/* Bouton Connexion / Déconnexion */}
       {user ? (
-      <Button variant="outline" className="px-2.5 py-1.5 sm:px-3.5 sm:py-2">Déconnexion</Button>
-    ) : (
-      <Button variant="outline" className="px-2.5 py-1.5 sm:px-3.5 sm:py-2">Connexion</Button>
-    )}
+        <Button
+  variant="outline"
+  onClick={async () => {
+    await supabase.auth.signOut();
+    setLogoutMsg("Déconnecté avec succès ✅");
+    setVue("auth");
+  }}
+>
+  Déconnexion
+</Button>
+
+      ) : (
+        <Button variant="outline" onClick={() => setVue("auth")}>
+          Connexion
+        </Button>
+      )}
+    </div>
   </div>
-</div>
 
 
   <nav className="max-w-7xl mx-auto px-4 pb-3">
