@@ -200,20 +200,17 @@ useEffect(() => {
     setUser(session?.user ?? null);
   });
 // après setUser(u) : (extrait à insérer dans ton useEffect d'auth)
-if (u && gaAvailable()) {
-  // user.id sur Supabase est un UUID — si tu veux être hyper-safe : hashe-le côté client/serveur.
-  gaSetUserId(u.id);
-
-  // envoie des propriétés non-PII (exemples) — adapte selon ton metadata
+if (user && gaAvailable()) {
+  gaSetUserId(user.id);
   gaSetUserProperties({
-    provider: u?.app_metadata?.provider || "unknown",
-    created_at: u?.created_at ? u.created_at.slice(0,10) : undefined
+    provider: user?.app_metadata?.provider || "unknown",
+    created_at: user?.created_at ? user.created_at.slice(0,10) : undefined,
   });
-} else if (!u && gaAvailable()) {
-  // logout -> retire user_id
+} else if (!user && gaAvailable()) {
   gaSetUserId(null);
   gaSetUserProperties({});
 }
+
 
   return () => {
     mounted = false;
