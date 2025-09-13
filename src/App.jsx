@@ -413,11 +413,6 @@ const profitParCategorie = useMemo(() => {
     alert("Erreur: id manquant pour la mise à jour.");
     return { error: new Error("missing id") };
   }
-        gaEvent("update_article", {
-      article_id: data[0].id,
-      vendu: data[0].vendu ? "yes" : "no",
-      prixRevente: data[0].prixRevente != null ? Number(data[0].prixRevente) : undefined,
-    });
 
 
   console.log("🔍 updateArticle -> id:", id, "patch:", patch);
