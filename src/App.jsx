@@ -413,13 +413,19 @@ const profitParCategorie = useMemo(() => {
     alert("Erreur: id manquant pour la mise à jour.");
     return { error: new Error("missing id") };
   }
+        gaEvent("update_article", {
+      article_id: data[0].id,
+      vendu: data[0].vendu ? "yes" : "no",
+      prixRevente: data[0].prixRevente != null ? Number(data[0].prixRevente) : undefined,
+    });
+
 
   console.log("🔍 updateArticle -> id:", id, "patch:", patch);
 
   // Supabase n'aime pas qu'on envoie 'id' dans le body d'update
   const { id: _, ...fieldsToUpdate } = patch;
 
-  // Nettoyage: convertir '' -> null pour éviter les erreurs de type côté Postgres
+  // ✅ Nettoyage: convertir '' -> null pour éviter les erreurs de type côté Postgres
   const clean = (v) => (v === "" ? null : v);
   const fields = {
     nom: fieldsToUpdate.nom,
@@ -436,41 +442,26 @@ const profitParCategorie = useMemo(() => {
     lieuRevente: clean(fieldsToUpdate.lieuRevente),
   };
 
-  try {
-    const { data, error } = await supabase
-      .from("articles")
-      .update(fields)
-      .eq("id", id)
-      .eq("user_id", user.id)
-      .select()
-      .single();
+  // 🔁 Mise à jour + retour de la ligne modifiée pour maj locale
+  const { data, error } = await supabase
+    .from("articles")
+    .update(fields)
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .select()
+    .single();
 
-    if (error) {
-      console.error("❌ Supabase update error:", error);
-      alert("Erreur Supabase (update): " + (error.message || "voir console"));
-      return { error };
-    }
-
-    // Mise à jour locale (pas besoin de refetch complet)
-    setArticles((prev) => prev.map((a) => (a.id === id ? { ...a, ...data } : a)));
-
-    // Envoie l'événement GA maintenant que `data` existe (et ne casse pas la suite si GA échoue)
-    try {
-      gaEvent("update_article", {
-        article_id: data.id,
-        vendu: data.vendu ? "yes" : "no",
-        prixRevente: data.prixRevente != null ? Number(data.prixRevente) : undefined,
-      });
-    } catch (e) {
-      console.warn("GA event failed (ignored):", e);
-    }
-
-    console.log("✅ Update OK:", data);
-    return { success: true, data };
-  } catch (e) {
-    console.error("❌ updateArticle unexpected error:", e);
-    return { error: e };
+  if (error) {
+    console.error("❌ Supabase update error:", error);
+    alert("Erreur Supabase (update): " + (error.message || "voir console"));
+    return { error };
   }
+
+  // ✅ Mise à jour locale (pas besoin de refetch complet)
+  setArticles((prev) => prev.map((a) => (a.id === id ? { ...a, ...data } : a)));
+
+  console.log("✅ Update OK:", data);
+  return { success: true, data };
 }
 
 
@@ -2318,3 +2309,4 @@ function groupByItem(articles) {
   });
   return Array.from(map.values());
 }
+
