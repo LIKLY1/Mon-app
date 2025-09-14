@@ -1699,7 +1699,7 @@ const handleImport = async () => {
     <Modal title="Importer un tableau CSV" onClose={() => setShowImportModal(false)}>
   <div className="space-y-4">
     <p className="text-sm text-zinc-500">
-      Le fichier CSV ou Excel doit contenir au moins ces colonnes : <br />
+      Le fichier CSV ou Excel doit contenir au moins ces colonnes écrites exactement comme ceci : <br />
       <strong>nom, categorie, quantite, taille, dateAchat, lieuAchat, prixAchat, sousCategorie, dateRevente, prixRevente, lieuRevente</strong>.<br />
       <br />
     
