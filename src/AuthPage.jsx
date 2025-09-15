@@ -7,6 +7,9 @@ export default function AuthPage({ onBack, onSuccess, logoutMsg }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [firstName, setFirstName] = useState("");
+const [lastName, setLastName] = useState("");
+
   const [mode, setMode] = useState("signin"); // "signin" ou "signup"
   const [msg, setMsg] = useState(null);
 
@@ -35,28 +38,38 @@ export default function AuthPage({ onBack, onSuccess, logoutMsg }) {
   }
 
   async function signUpWithEmail() {
-    if (!email || !password) {
-      setMsg({ type: "error", text: "Email et mot de passe requis" });
-      return;
-    }
-    setLoading(true);
-    setMsg(null);
-
-    const { error } = await supabase.auth.signUp({ email, password });
-    setLoading(false);
-
-    if (error) {
-  let msgText = "Impossible de créer le compte.";
-  if (error.message.includes("duplicate key")) {
-    msgText = "Cet email est déjà utilisé.";
+  if (!email || !password || !firstName || !lastName) {
+    setMsg({ type: "error", text: "Nom, prénom, email et mot de passe requis" });
+    return;
   }
-  setMsg({ type: "error", text: msgText });
-} else {
-  setMsg({ type: "success", text: `Bienvenue ${email} 👋` });
-  onSuccess?.();
+  setLoading(true);
+  setMsg(null);
+
+  const { error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      data: {
+        first_name: firstName,
+        last_name: lastName,
+      },
+    },
+  });
+
+  setLoading(false);
+
+  if (error) {
+    let msgText = "Impossible de créer le compte.";
+    if (error.message.includes("duplicate key")) {
+      msgText = "Cet email est déjà utilisé.";
+    }
+    setMsg({ type: "error", text: msgText });
+  } else {
+    setMsg({ type: "success", text: `Bienvenue ${firstName} 👋` });
+    onSuccess?.();
+  }
 }
 
-  }
 
   async function signInWithDiscord() {
     setLoading(true);
@@ -94,6 +107,24 @@ export default function AuthPage({ onBack, onSuccess, logoutMsg }) {
             {msg.text}
           </div>
         )}
+{mode === "signup" && (
+  <>
+    <input
+      type="text"
+      placeholder="Prénom"
+      value={firstName}
+      onChange={(e) => setFirstName(e.target.value)}
+      className="w-full rounded-xl border px-3 py-2 mb-3"
+    />
+    <input
+      type="text"
+      placeholder="Nom"
+      value={lastName}
+      onChange={(e) => setLastName(e.target.value)}
+      className="w-full rounded-xl border px-3 py-2 mb-3"
+    />
+  </>
+)}
 
         <input
           type="email"

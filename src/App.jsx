@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Bar, BarChart, CartesianGrid, Line, LineChart, Pie, PieChart, Tooltip,
   XAxis, YAxis, Legend, ResponsiveContainer, Cell
-} from "recharts"
+} from "recharts";
 import {
   Plus, LineChart as LineChartIcon, Package, CheckCircle2, Pencil, Trash2,
   ShoppingCart, Save, Search, ArrowRightLeft, Wallet, Layers, Users
@@ -13,6 +13,29 @@ import { supabase } from "./supabaseClient";
 import Papa from "papaparse";
 import AuthPage from "./AuthPage";
 import logo from "./logo.png";
+
+// ---------- GA helper (à coller après les imports) ----------
+const GA_MEASUREMENT_ID = "G-R0DH0B2TLT"; // optionnel : garder celui de index.html ou utiliser une var d'env
+
+function gaAvailable() {
+  return typeof window !== "undefined" && typeof window.gtag === "function";
+}
+
+function gaEvent(name, params = {}) {
+  if (!gaAvailable()) return;
+  try { window.gtag("event", name, params); } catch (e) { console.warn("GA event error", e); }
+}
+
+function gaSetUserId(id) {
+  if (!gaAvailable()) return;
+  try { window.gtag("set", { user_id: id }); } catch (e) { console.warn("GA set user_id error", e); }
+}
+
+function gaSetUserProperties(props = {}) {
+  if (!gaAvailable()) return;
+  try { window.gtag("set", { user_properties: props }); } catch (e) { console.warn("GA set user_properties error", e); }
+}
+// -------------------------------------------------------------
 
 
 // --- Constants / Types ---
@@ -65,16 +88,30 @@ const Field = ({ label, required=false, children }) => (
     {children}
   </label>
 );
-const Input = (props) => (
-  <input {...props} className={classNames("w-full rounded-xl border px-3 py-2 bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-700 outline-none focus:ring-2 ring-zinc-300 dark:ring-zinc-600", props.className)} />
+const Input = ({ className = '', ...props }) => (
+  <input
+    {...props}
+    className={classNames(
+      'w-full rounded-xl border px-3 py-2 bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-700 outline-none focus:ring-2 ring-zinc-300 dark:ring-zinc-600',
+      'text-zinc-900 dark:text-zinc-50 placeholder-zinc-400 dark:placeholder-zinc-500',
+      className
+    )}
+  />
 );
-const Select = ({ options, ...props }) => (
-  <select {...props} className="w-full rounded-xl border px-3 py-2 bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-700 outline-none focus:ring-2 ring-zinc-300 dark:ring-zinc-600">
-    {options.map((o) => (
-      <option key={o} value={o}>{o}</option>
-    ))}
+
+const Select = ({ options = [], className = '', ...props }) => (
+  <select
+    {...props}
+    className={classNames(
+      'w-full rounded-xl border px-3 py-2 bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-700 outline-none focus:ring-2 ring-zinc-300 dark:ring-zinc-600',
+      'text-zinc-900 dark:text-zinc-50',
+      className
+    )}
+  >
+    {options.map(o => <option key={o} value={o} className="text-zinc-900 dark:text-zinc-50">{o}</option>)}
   </select>
 );
+
 export const Button = ({ children, variant="solid", icon: Icon, className, neon=false, ...props }) => {
   const variants = {
     solid: "bg-[#0F766E] text-white hover:bg-[#0C5D55] btn-neon", // couleur néon
@@ -107,6 +144,7 @@ export const Button = ({ children, variant="solid", icon: Icon, className, neon=
 export default function AppComptaAchatRevente() {
   const [articles, setArticles] = useState([]);
   const [vue, setVue] = useState("dashboard");
+
   const [filtre, setFiltre] = useState({
   q: "",
   categorie: "toutes",
@@ -122,6 +160,20 @@ export default function AppComptaAchatRevente() {
   from: "", // début (YYYY-MM-DD)
   to: "",   // fin (YYYY-MM-DD)
 });
+  useEffect(() => {
+  // Déclenche un page_view GA4 quand la 'vue' change
+  if (gaAvailable()) {
+    window.gtag("event", "page_view", {
+      page_title: document.title,
+      page_location: window.location.href,
+      page_path: window.location.pathname + (vue ? `?view=${vue}` : ""),
+      view_name: vue,          // CUSTOM PARAM - à enregistrer côté GA4 si tu veux l'utiliser en rapport
+      debug_mode: false       // true => enverra l'événement dans DebugView (utile pour dev)
+    });
+  }
+}, [vue]);
+
+
 
       
       
@@ -129,7 +181,9 @@ export default function AppComptaAchatRevente() {
 
 // ajout dans AppComptaAchatRevente (au même niveau que articles, vue, etc.)
 const [user, setUser] = useState(null);
+
 const [logoutMsg, setLogoutMsg] = useState(null);
+  
 
 
 // initialise la session / écoute les changements d'auth
@@ -145,6 +199,18 @@ useEffect(() => {
   const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
     setUser(session?.user ?? null);
   });
+// après setUser(u) : (extrait à insérer dans ton useEffect d'auth)
+if (user && gaAvailable()) {
+  gaSetUserId(user.id);
+  gaSetUserProperties({
+    provider: user?.app_metadata?.provider || "unknown",
+    created_at: user?.created_at ? user.created_at.slice(0,10) : undefined,
+  });
+} else if (!user && gaAvailable()) {
+  gaSetUserId(null);
+  gaSetUserProperties({});
+}
+
 
   return () => {
     mounted = false;
@@ -321,15 +387,25 @@ const profitParCategorie = useMemo(() => {
     alert("Tu dois être connecté pour ajouter des articles.");
     return { error: new Error("Not authenticated") };
   }
+
   const payload = Array.isArray(articleOrArray) ? articleOrArray : [articleOrArray];
-  // attache user_id à chaque ligne
-  const payloadWithOwner = payload.map(a => ({ ...a, user_id: user.id }));
+
+  const payloadWithOwner = payload.map(a => ({
+    ...a,
+    user_id: user.id,
+    first_name: user.user_metadata?.first_name || null,
+    last_name: user.user_metadata?.last_name || null,
+  }));
 
   const { data, error } = await supabase.from("articles").insert(payloadWithOwner);
-  if (error) { console.error("Insert error:", error); return { error }; }
+  if (error) { 
+    console.error("Insert error:", error); 
+    return { error }; 
+  }
   await fetchArticles();
   return { data };
 }
+
 
 
 
@@ -339,6 +415,7 @@ const profitParCategorie = useMemo(() => {
     alert("Erreur: id manquant pour la mise à jour.");
     return { error: new Error("missing id") };
   }
+
 
   console.log("🔍 updateArticle -> id:", id, "patch:", patch);
 
@@ -398,44 +475,59 @@ const profitParCategorie = useMemo(() => {
     return { error };
   } else {
     await fetchArticles();
+        gaEvent("delete_article", { article_id: id });
+
     return { data };
   }
 }
 
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-zinc-50 to-zinc-100 dark:from-zinc-950 dark:to-zinc-900 text-zinc-900 dark:text-zinc-50">
+   <div className="min-h-screen bg-gradient-to-b from-zinc-50 to-zinc-100 dark:from-zinc-950 dark:to-zinc-900 text-zinc-900 dark:text-zinc-50">
      <header className="sticky top-0 z-10 backdrop-blur bg-white/80 dark:bg-zinc-900/80 border-b border-zinc-200 dark:border-zinc-800">
-  <div className="max-w-7xl mx-auto px-4 py-3 flex items-center gap-3">
-    <img src={logo} className="h-16 w-auto" />
-<h1 className="font-semibold text-lg">MoneyTrackR</h1>
+  <div className="max-w-7xl mx-auto px-4 py-3 flex flex-col sm:flex-row items-center gap-3">
+    {/* Logo + titre */}
+    <div className="flex items-center gap-3">
+      <img src={logo} className="h-10 sm:h-16 w-auto" alt="MoneyTrackR" />
+      {/* On cache le titre sur mobile */}
+      <h1 className="font-semibold text-lg hidden sm:block">MoneyTrackR</h1>
+    </div>
 
-
+    {/* Actions */}
     <div className="ml-auto flex items-center gap-2">
-      <Button icon={Plus} onClick={() => setVue("nouvel")}>
-        Nouvel achat
+      <Button
+        icon={Plus}
+        className="px-2.5 py-1.5 sm:px-3.5 sm:py-2"
+        onClick={() => setVue("nouvel")}
+      >
+        <span className="hidden sm:inline">Nouvel achat</span>
       </Button>
 
-      {/* Bouton Connexion / Déconnexion */}
       {user ? (
         <Button
-  variant="outline"
-  onClick={async () => {
-    await supabase.auth.signOut();
-    setLogoutMsg("Déconnecté avec succès ✅");
-    setVue("auth");
-  }}
->
-  Déconnexion
-</Button>
-
+          variant="outline"
+          className="px-2.5 py-1.5 sm:px-3.5 sm:py-2"
+          onClick={async () => {
+            await supabase.auth.signOut();
+            setLogoutMsg("Déconnecté avec succès ✅");
+            setVue("auth");
+          }}
+        >
+          <span className="hidden sm:inline">Déconnexion</span>
+        </Button>
       ) : (
-        <Button variant="outline" onClick={() => setVue("auth")}>
-          Connexion
+        <Button
+          variant="outline"
+          className="px-2.5 py-1.5 sm:px-3.5 sm:py-2"
+          onClick={() => setVue("auth")}
+        >
+          <span className="hidden sm:inline">Connexion</span>
         </Button>
       )}
     </div>
   </div>
+
+
 
   <nav className="max-w-7xl mx-auto px-4 pb-3">
     <div className="inline-flex rounded-2xl bg-zinc-100 dark:bg-zinc-800 p-1">
@@ -548,7 +640,7 @@ const profitParCategorie = useMemo(() => {
 </AnimatePresence>
 
       <footer className="max-w-7xl mx-auto px-4 py-8 text-xs opacity-70">
-        Fait pour simplifier ta compta d'achat–revente. 
+        Money tracker : L'outil pour simplifier ta compta d'achat–revente. 
       </footer>
     </div>
   );
@@ -811,6 +903,8 @@ function chooseCatalogItem(item) {
     }));
 
     await onSubmit(articles);
+    
+
 
     // reset du formulaire
     setF({
@@ -876,44 +970,38 @@ setCatalogueCollapsed(false);
 
           {items.map((item) => (
   <button
-    key={item.id}
-    type="button"
-    onClick={() => chooseCatalogItem(item)}
-    className={classNames(
-      "rounded-2xl overflow-hidden border shadow-sm hover:shadow-md transition text-left",
-      "border-black/70",
-      "flex flex-col h-full", // uniformisation
-      f.nom === item.nom ? "ring-2 ring-amber-400" : ""
-    )}
-  >
-    {/* Image avec ratio fixe */}
-    <div className="aspect-video bg-zinc-100 flex items-center justify-center overflow-hidden">
-  {item.image_url ? (
-    <img
-      src={item.image_url}
-      alt={item.nom}
-      className="w-full h-full object-cover"
-      loading="lazy"
-    />
-  ) : (
-    <div className="text-xs text-zinc-400 p-3">Pas d'image</div>
+  key={item.id}
+  type="button"
+  onClick={() => chooseCatalogItem(item)}
+  className={classNames(
+    // classes existantes
+    "rounded-2xl overflow-hidden border shadow-sm hover:shadow-md transition text-left",
+    "border-black/70",
+    // <-- Ajouté : forcer le bouton à occuper la largeur de la cellule et permettre le shrink
+    "flex flex-col h-full w-full min-w-0",
+    f.nom === item.nom ? "ring-2 ring-amber-400" : ""
   )}
-</div>
+>
+  <div className="aspect-video bg-zinc-100 flex items-center justify-center overflow-hidden w-full">
+    {item.image_url ? (
+      <img src={item.image_url} alt={item.nom} className="w-full h-full object-cover" loading="lazy" />
+    ) : (
+      <div className="text-xs text-zinc-400 p-3">Pas d'image</div>
+    )}
+  </div>
 
-
-    {/* Barre jaune avec hauteur fixe */}
-    <div className="px-3 py-2 font-medium h-12 flex items-center"
-     style={{ backgroundColor: "#A8DADC", color: "white" }}>
-
-  <span className={classNames(f.nom === item.nom ? "whitespace-normal" : "truncate")}>
+  {/* <-- Ajouté : w-full + min-w-0 + overflow-hidden pour forcer largeur et permettre truncate */}
+  <div
+  className="px-3 py-2 font-medium h-12 flex items-center w-full min-w-0 overflow-hidden"
+  style={{ backgroundColor: "#A8DADC" }}
+>
+  <span className="truncate text-white" title={item.nom}>
     {item.nom}
   </span>
 </div>
 
+</button>
 
-
-
-  </button>
 ))}
 
         </div>
@@ -1209,6 +1297,7 @@ function Inventaire({ articles, filtre, setFiltre, onEdit, onDelete, setArticles
   const [showImportModal, setShowImportModal] = useState(false);
   const [importData, setImportData] = useState([]);
   const [successMessage, setSuccessMessage] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
 
   const parseDate = (str) => {
   if (!str) return null;
@@ -1317,6 +1406,8 @@ const handleImport = async () => {
 
     // recharge automatiquement le tableau (ta fonction existante)
     fetchArticles();
+          gaEvent("import_csv", { rows_imported: (data || []).length });
+
   }
 };
 
@@ -1376,189 +1467,241 @@ const handleImport = async () => {
 >
   Importer des données
 </Button>
+{/* bouton mobile pour montrer/masquer les filtres */}
+<div className="sm:hidden w-full mb-3">
+  <div className="flex gap-2">
+    <Button variant="outline" onClick={() => setShowFilters(s => !s)}>
+      {showFilters ? "Masquer filtres" : "Afficher filtres"}
+    </Button>
+
+    <Button
+      variant="subtle"
+      onClick={() =>
+        setFiltre({
+          q: "",
+          categorie: "toutes",
+          etat: "tous",
+          dateAchat: "",
+          dateRevente: "",
+          lieuAchat: "",
+          lieuRevente: "",
+        })
+      }
+    >
+      Réinitialiser
+    </Button>
+  </div>
+</div>
 
 </div>
 
 
           {/* Filtres */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-[900px] mx-auto w-full">
+        {/* Filtres (repliable sur mobile, visible sur sm+) */}
+<div className={`${showFilters ? "block" : "hidden sm:grid"} grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-[900px] mx-auto w-full`}>
 
-            {/* Recherche */}
-            <Field label="Recherche">
-              <Input
-                placeholder="Nom du produit"
-                value={filtre.q}
-                onChange={(e) => setFiltre((f) => ({ ...f, q: e.target.value }))}
-              />
-            </Field>
+  {/* Recherche */}
+  <Field label="Recherche">
+    <Input
+      placeholder="Nom du produit"
+      value={filtre.q || ""}
+      onChange={(e) => setFiltre((f) => ({ ...f, q: e.target.value }))}
+    />
+  </Field>
 
-            {/* Catégorie */}
-            <Field label="Catégorie">
-              <Select
-                value={filtre.categorie}
-                onChange={(e) => setFiltre((f) => ({ ...f, categorie: e.target.value }))}
-                options={["toutes", ...CATEGORIES]}
-              />
-            </Field>
+  {/* Catégorie */}
+  <Field label="Catégorie">
+    <Select
+      value={filtre.categorie || "toutes"}
+      onChange={(e) => setFiltre((f) => ({ ...f, categorie: e.target.value }))}
+      options={["toutes", ...CATEGORIES]}
+    />
+  </Field>
 
-            {/* Date achat */}
-            <Field label="Date d'achat">
-              <Input
-                type="date"
-                value={filtre.dateAchat || ""}
-                onChange={(e) => setFiltre((f) => ({ ...f, dateAchat: e.target.value }))}
-              />
-            </Field>
+  {/* Date achat */}
+  <Field label="Date d'achat">
+    <Input
+      type="date"
+      value={filtre.dateAchat || ""}
+      onChange={(e) => setFiltre((f) => ({ ...f, dateAchat: e.target.value }))}
+    />
+  </Field>
 
-            {/* Date revente */}
-            <Field label="Date de revente">
-              <Input
-                type="date"
-                value={filtre.dateRevente || ""}
-                onChange={(e) => setFiltre((f) => ({ ...f, dateRevente: e.target.value }))}
-              />
-            </Field>
+  {/* Date revente */}
+  <Field label="Date de revente">
+    <Input
+      type="date"
+      value={filtre.dateRevente || ""}
+      onChange={(e) => setFiltre((f) => ({ ...f, dateRevente: e.target.value }))}
+    />
+  </Field>
 
-            {/* Lieu achat */}
-            <Field label="Lieu d'achat">
-              <Input
-                value={filtre.lieuAchat || ""}
-                onChange={(e) => setFiltre((f) => ({ ...f, lieuAchat: e.target.value }))}
-              />
-            </Field>
+  {/* Lieu achat */}
+  <Field label="Lieu d'achat">
+    <Input
+      value={filtre.lieuAchat || ""}
+      onChange={(e) => setFiltre((f) => ({ ...f, lieuAchat: e.target.value }))}
+    />
+  </Field>
 
-            {/* Lieu vente */}
-            <Field label="Lieu de vente">
-              <Input
-                value={filtre.lieuRevente || ""}
-                onChange={(e) => setFiltre((f) => ({ ...f, lieuRevente: e.target.value }))}
-              />
-            </Field>
-          </div>
+  {/* Lieu vente */}
+  <Field label="Lieu de vente">
+    <Input
+      value={filtre.lieuRevente || ""}
+      onChange={(e) => setFiltre((f) => ({ ...f, lieuRevente: e.target.value }))}
+    />
+  </Field>
+</div>
+
         </div>{/* <-- fermé le flex qui contient onglets + filtres */}
       </div>{/* <-- fermé le sticky */}
 
       {/* === Tableau inventaire === */}
       <Card>
-        <div className="overflow-x-auto">
-          <table className="w-full text-base">
-            <thead className="text-left text-zinc-500">
-              <tr>
-                <th className="py-3 pr-4">Article</th>
-                <th className="py-3 pr-4">Catégorie</th>
-                <th className="py-3 pr-4">Date d'achat</th>
-                <th className="py-3 pr-4">Lieu d'achat</th>
-                <th className="py-3 pr-4">Prix Achat</th>
-                <th className="py-3 pr-4">Date revente</th>
-                <th className="py-3 pr-4">Lieu revente</th>
-                <th className="py-3 pr-4">Prix revente</th>
-                <th className="py-3 pr-4">Profit</th>
-                <th className="py-3 pr-4">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {articles.map((a) => {
-                const achat = a.prixAchat || 0;
-                const revenuUnitaire = a.prixRevente != null ? a.prixRevente : null;
-                const revenuTotal = a.vendu && a.prixRevente != null ? a.prixRevente : null;
-                const profit = revenuTotal != null ? revenuTotal - achat : null;
+  {/* LISTE MOBILE (cartes) */}
+  <div className="block sm:hidden divide-y">
+    {articles.map((a) => {
+      const achat = a.prixAchat || 0;
+      const revenu = a.prixRevente != null ? a.prixRevente : null;
+      const profit = revenu != null ? revenu - achat : null;
+      return (
+        <div key={a.id} className="p-4 flex justify-between items-start">
+          <div className="min-w-0">
+            <div className="font-medium truncate">
+              {a.nom} {a.vendu && <Badge variant="success">Vendu</Badge>}
+            </div>
+            {a.taille && <div className="text-xs text-zinc-500 truncate">{a.taille}</div>}
+            <div className="text-xs text-zinc-500 truncate">{a.categorie} • {formatDate(a.dateAchat)}</div>
+            <div className="text-sm mt-1">
+              {formatMoney(achat)} •{" "}
+              {profit != null ? (
+                <span className={profit >= 0 ? "text-emerald-600" : "text-red-600"}>
+                  {formatMoney(profit)}
+                </span>
+              ) : (
+                <span className="text-zinc-400">—</span>
+              )}
+            </div>
+          </div>
 
-                return (
-                  <tr key={a.id} className="border-t border-zinc-200 dark:border-zinc-800">
-                    <td className="py-3 pr-4">
-                      <div className="font-medium">
-                        {a.nom} {a.vendu && <Badge variant="success">Vendu</Badge>}
+          <div className="flex flex-col items-end ml-3 gap-2">
+            {!a.vendu && (
+              <Button
+                variant="success"
+                icon={CheckCircle2}
+                onClick={() =>
+                  onEdit({
+                    ...a,
+                    dateRevente: a.dateRevente || new Date().toISOString().slice(0, 10),
+                  })
+                }
+              >
+                Vendre
+              </Button>
+            )}
 
-                      </div>
-                      {a.taille && <div className="text-xs text-zinc-500">{a.taille}</div>}
-                    </td>
-
-                    <td className="py-3 pr-4">
-                      {a.categorie}
-                      {a.sousCategorie ? ` • ${a.sousCategorie}` : ""}
-                    </td>
-
-                    <td className="py-3 pr-4">{formatDate(a.dateAchat)}</td>
-
-                    <td className="py-3 pr-4">
-                      {a.lieuAchat ? a.lieuAchat : <span className="text-zinc-400">—</span>}
-                    </td>
-
-                    <td className="py-3 pr-4">{formatMoney(achat)}</td>
-
-                    <td className="py-3 pr-4">
-                      {a.vendu && a.dateRevente ? formatDate(a.dateRevente) : <span className="text-zinc-400">—</span>}
-                    </td>
-
-                    <td className="py-3 pr-4">
-                      {a.vendu && a.lieuRevente ? a.lieuRevente : <span className="text-zinc-400">—</span>}
-                    </td>
-
-                    <td className="py-3 pr-4">
-                      {a.vendu && revenuUnitaire != null ? formatMoney(revenuTotal || 0) : <span className="text-zinc-400">—</span>}
-                    </td>
-
-                    <td className="py-3 pr-4">
-                      {profit != null ? (
-                        <span className={profit >= 0 ? "text-emerald-600" : "text-red-600"}>
-                          {formatMoney(profit)}
-                        </span>
-                      ) : (
-                        <span className="text-zinc-400">—</span>
-                      )}
-                    </td>
-
-<td className="py-3 pr-4">
-  <div className="flex gap-2">
-    {!a.vendu && (
-      <Button
-        variant="success"
-        icon={CheckCircle2}
-        onClick={() =>
-          onEdit({
-            ...a,
-            dateRevente:
-              a.dateRevente || new Date().toISOString().slice(0, 10),
-          })
-        }
-      >
-        Vendre
-      </Button>
-    )}
-    <Button
-      variant="info"
-      icon={Pencil}
-      onClick={() => onEdit(a)}
-    >
-      Modifier
-    </Button>
-    <Button
-      variant="danger"
-      icon={Trash2}
-      onClick={() => onDelete(a.id)}
-    >
-      Suppr.
-    </Button>
-  </div>
-</td>
-</tr>
-);
-})}
-</tbody>
-</table>
-
-
-          {articles.length === 0 && (
-            <div className="py-10 text-center text-zinc-500">Aucun article. Ajoute ton premier achat 👇</div>
-          )}
+            <div className="flex gap-2">
+              <Button variant="info" icon={Pencil} onClick={() => onEdit(a)} />
+              <Button variant="danger" icon={Trash2} onClick={() => onDelete(a.id)} />
+            </div>
+          </div>
         </div>
-      </Card>
+      );
+    })}
+    {articles.length === 0 && <div className="p-6 text-center text-zinc-500">Aucun article. Ajoute ton premier achat 👇</div>}
+  </div>
+
+  {/* TABLEAU DESKTOP (sm+) */}
+  <div className="hidden sm:block overflow-x-auto">
+    <table className="w-full text-sm sm:text-base">
+      <thead className="text-left text-zinc-500">
+        <tr>
+          <th className="py-3 pr-4">Article</th>
+          <th className="py-3 pr-4">Catégorie</th>
+          <th className="py-3 pr-4">Date d'achat</th>
+          <th className="py-3 pr-4">Lieu d'achat</th>
+          <th className="py-3 pr-4">Prix Achat</th>
+          <th className="py-3 pr-4">Date revente</th>
+          <th className="py-3 pr-4">Lieu revente</th>
+          <th className="py-3 pr-4">Prix revente</th>
+          <th className="py-3 pr-4">Profit</th>
+          <th className="py-3 pr-4">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {articles.map((a) => {
+          const achat = a.prixAchat || 0;
+          const revenuUnitaire = a.prixRevente != null ? a.prixRevente : null;
+          const revenuTotal = a.vendu && a.prixRevente != null ? a.prixRevente : null;
+          const profit = revenuTotal != null ? revenuTotal - achat : null;
+
+          return (
+            <tr key={a.id} className="border-t border-zinc-200 dark:border-zinc-800">
+              <td className="py-3 pr-4">
+                <div className="font-medium">
+                  {a.nom} {a.vendu && <Badge variant="success">Vendu</Badge>}
+                </div>
+                {a.taille && <div className="text-xs text-zinc-500">{a.taille}</div>}
+              </td>
+
+              <td className="py-3 pr-4">
+                {a.categorie}
+                {a.sousCategorie ? ` • ${a.sousCategorie}` : ""}
+              </td>
+
+              <td className="py-3 pr-4">{formatDate(a.dateAchat)}</td>
+              <td className="py-3 pr-4">{a.lieuAchat ? a.lieuAchat : <span className="text-zinc-400">—</span>}</td>
+              <td className="py-3 pr-4">{formatMoney(achat)}</td>
+              <td className="py-3 pr-4">{a.vendu && a.dateRevente ? formatDate(a.dateRevente) : <span className="text-zinc-400">—</span>}</td>
+              <td className="py-3 pr-4">{a.vendu && a.lieuRevente ? a.lieuRevente : <span className="text-zinc-400">—</span>}</td>
+              <td className="py-3 pr-4">{a.vendu && revenuUnitaire != null ? formatMoney(revenuTotal || 0) : <span className="text-zinc-400">—</span>}</td>
+              <td className="py-3 pr-4">
+                {profit != null ? (
+                  <span className={profit >= 0 ? "text-emerald-600" : "text-red-600"}>{formatMoney(profit)}</span>
+                ) : (
+                  <span className="text-zinc-400">—</span>
+                )}
+              </td>
+
+              <td className="py-3 pr-4">
+                <div className="flex gap-2">
+                  {!a.vendu && (
+                    <Button
+                      variant="success"
+                      icon={CheckCircle2}
+                      onClick={() =>
+                        onEdit({
+                          ...a,
+                          dateRevente: a.dateRevente || new Date().toISOString().slice(0, 10),
+                        })
+                      }
+                    >
+                      Vendre
+                    </Button>
+                  )}
+
+                  <Button variant="info" icon={Pencil} onClick={() => onEdit(a)}>
+                    Modifier
+                  </Button>
+                  <Button variant="danger" icon={Trash2} onClick={() => onDelete(a.id)}>
+                    Suppr.
+                  </Button>
+                </div>
+              </td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  </div>
+</Card>
+
       {showImportModal && (
   <Modal title="Importer un tableau CSV" onClose={() => setShowImportModal(false)}>
     <Modal title="Importer un tableau CSV" onClose={() => setShowImportModal(false)}>
   <div className="space-y-4">
     <p className="text-sm text-zinc-500">
-      Le fichier CSV ou Excel doit contenir au moins ces colonnes : <br />
+      Le fichier CSV ou Excel doit contenir au moins ces colonnes écrites exactement comme ceci : <br />
       <strong>nom, categorie, quantite, taille, dateAchat, lieuAchat, prixAchat, sousCategorie, dateRevente, prixRevente, lieuRevente</strong>.<br />
       <br />
     
@@ -1865,10 +2008,10 @@ function Dashboard({
 
             </div>
 
-            {/* Infos importantes */}
-            <div className="w-64 bg-zinc-50 p-4 rounded shadow overflow-auto">
-              <h4 className="font-semibold mb-2">Infos importantes</h4>
-              <div className="text-sm text-zinc-700 space-y-1">
+           {/* Infos importantes */}
+<div className="w-64 bg-zinc-50 dark:bg-zinc-800 p-4 rounded shadow overflow-auto">
+  <h4 className="font-semibold mb-2 text-zinc-900 dark:text-zinc-50">Infos importantes</h4>
+  <div className="text-sm text-zinc-700 dark:text-zinc-200 space-y-1">
                 {selectedGraph.key === "ventesParMois" && (
                   <>
                     <div>Total revenu: {formatMoney(selectedGraph.data.reduce((sum, d) => sum + (d.revenu || 0), 0))}</div>
@@ -1969,6 +2112,8 @@ function KPI({ label, value, money=true, suffix="", positive=false, onClick }) {
   );
 }
 
+
+
 function KPIDetail({ detail }) {
   const descriptions = {
     totalInvesti: "Montant total que tu as dépensé pour acheter tes articles.",
@@ -2002,36 +2147,34 @@ function KPIDetail({ detail }) {
       .slice(0, 3);
 
     return (
-      <div className="grid gap-10 p-6 bg-white rounded-lg shadow-md">
-        <h3 className="text-2x1 font-bold text-zinc-800 mb-2">{title}</h3>
-        <div className="text-base text-black flex items-center gap-1">
-        <span className="text-blue-500">ℹ️</span> {descriptions[defKey]}
-        </div>
-        
-
-        <ul className="space-y-3">
-          {topVentes.map((a) => {
+  <div className="grid gap-10 p-6 bg-white dark:bg-zinc-800 rounded-lg shadow-md">
+    <h3 className="text-2xl font-bold text-zinc-800 dark:text-zinc-50 mb-2">{title}</h3>
+    <div className="text-base text-zinc-700 dark:text-zinc-200 flex items-center gap-1">
+      <span className="text-blue-500">ℹ️</span> {descriptions[defKey]}
+    </div>
+    <ul className="space-y-3">
+      {topVentes.map((a) => {
             const q = a.quantite || 1;
             const revenuTotal = (a.prixRevente || 0) * q;
             const achatTotal = (a.prixAchat || 0) * q;
             const profit = revenuTotal - achatTotal;
             return (
-              <li key={a.id} className="border p-3 rounded-lg flex justify-between items-center">
-                <div>
-                  <div className="font-medium">{a.nom}</div>
-                  <div className="text-xs text-zinc-500">
-                    {formatDate(a.dateRevente)} • {a.lieuRevente || "—"}
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div>{formatMoney(revenuTotal)}</div>
-                  <div className={profit >= 0 ? "text-emerald-600" : "text-red-600"}>
-                    {formatMoney(profit)} profit
-                  </div>
-                </div>
-              </li>
-            );
-          })}
+          <li key={a.id} className="border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-3 rounded-lg flex justify-between items-center">
+            <div>
+              <div className="font-medium text-zinc-900 dark:text-zinc-50">{a.nom}</div>
+              <div className="text-xs text-zinc-500 dark:text-zinc-400">
+                {formatDate(a.dateRevente)} • {a.lieuRevente || "—"}
+              </div>
+            </div>
+            <div className="text-right">
+              <div className="text-zinc-900 dark:text-zinc-50">{formatMoney(revenuTotal)}</div>
+              <div className={profit >= 0 ? "text-emerald-600" : "text-red-600"}>
+                {formatMoney(profit)} profit
+              </div>
+            </div>
+          </li>
+        );
+      })}
           {topVentes.length === 0 && (
             <li className="text-sm text-zinc-500">Aucune vente enregistrée.</li>
           )}
@@ -2090,7 +2233,7 @@ function KPIDetail({ detail }) {
 <ol className="space-y-2">
         {rows.map((r, i) => (
           <li key={i} className="flex justify-between">
-            <span className="font-semibold">{i + 1}. {r.label}</span>
+            <span className="font-semibold dark:text-black">{i + 1}. {r.label}</span>
             <span className="text-gray-800">{r.display}</span>
           </li>
         ))}
