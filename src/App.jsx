@@ -1,4 +1,5 @@
 // App.jsx
+// App.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -403,6 +404,13 @@ const profitParCategorie = useMemo(() => {
     return { error }; 
   }
   await fetchArticles();
+          gaEvent("add_article", {
+      item_name: payload.nom,
+      category: payload.categorie,
+      price: Number(payload.prixAchat || 0),
+      quantity: Number(payload.quantite || 1),
+    });
+
   return { data };
 }
 
@@ -2306,3 +2314,5 @@ function groupByItem(articles) {
   });
   return Array.from(map.values());
 }
+
+
