@@ -143,3 +143,10 @@ textarea::placeholder {
 
 /* Important : limiter aux inputs → n'affecte pas les graphiques */
 
+.text-neon {
+  color: #0F766E; /* le vert de ton thème */
+  text-shadow:
+    0 0 3px #0F766E,
+    0 0 3px #0F766E,
+    0 0 3px #0F766E;
+}

@@ -75,7 +75,7 @@ const [lastName, setLastName] = useState("");
     setLoading(true);
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "discord",
-      options: { redirectTo: window.location.origin },
+      options: { redirectTo: "https://louis1.vercel.app/, http://localhost:5173/" },
     });
     setLoading(false);
     if (error) setMsg({ type: "error", text: error.message });
