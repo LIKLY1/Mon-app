@@ -1231,16 +1231,16 @@ function EditForm({ initial, onSave }) {
   }));
   const [saving, setSaving] = useState(false);
 
-  async function submit(e) {
+    async function submit(e) {
     e.preventDefault();
     if (saving) return;
     setSaving(true);
 
     try {
-      // ✅ venduAuto si date OU prix de revente renseigné
+      // vendu si date OU prix fournis (non vides)
       const venduAuto =
         (f.dateRevente && String(f.dateRevente).trim().length > 0) ||
-        (f.prixRevente !== "" && f.prixRevente != null);
+        (f.prixRevente !== "" && f.prixRevente != null && String(f.prixRevente).trim().length > 0);
 
       const patch = {
         nom: f.nom,
@@ -1249,35 +1249,32 @@ function EditForm({ initial, onSave }) {
         sousCategorie: f.sousCategorie || null,
         prixAchat: Number(f.prixAchat),
         lieuAchat: f.lieuAchat || null,
-        dateAchat: f.dateAchat, // "YYYY-MM-DD"
+        dateAchat: f.dateAchat,
         quantite: Number(f.quantite || 1),
 
         vendu: venduAuto,
-        dateRevente: venduAuto
-          ? (f.dateRevente && String(f.dateRevente).trim().length > 0
-              ? f.dateRevente
-              : new Date().toISOString().slice(0, 10))
-          : null,
-        prixRevente: venduAuto ? Number(f.prixRevente || 0) : null,
-        lieuRevente: venduAuto ? (f.lieuRevente || null) : null,
+        // si vide -> null (on ne remplace PAS par today)
+        dateRevente: (f.dateRevente && String(f.dateRevente).trim().length > 0) ? f.dateRevente : null,
+        // si vide -> null (on n'envoie pas 0)
+        prixRevente: (f.prixRevente !== "" && f.prixRevente != null && String(f.prixRevente).trim().length > 0)
+                        ? Number(f.prixRevente)
+                        : null,
+        lieuRevente: (f.lieuRevente && String(f.lieuRevente).trim().length > 0) ? f.lieuRevente : null,
       };
 
       console.log("📝 Submit EditForm -> patch:", patch);
 
-      // ⚠️ onSave doit retourner la promesse (c’est le cas dans ton App)
       const res = await onSave(patch);
 
       if (res && res.error) {
         console.error("❌ onSave error:", res.error);
         alert("Erreur lors de l’enregistrement: " + (res.error.message || "voir console"));
-      } else {
-        // Le parent ferme le modal si succès (setEditing(null))
-        // On ne fait rien ici.
       }
     } finally {
       setSaving(false);
     }
   }
+
 
   return (
     <form onSubmit={submit} className="grid gap-4 md:grid-cols-2">
@@ -1316,22 +1313,42 @@ function EditForm({ initial, onSave }) {
         <Input type="date" value={f.dateAchat} onChange={(e) => setF({ ...f, dateAchat: e.target.value })} />
       </Field>
 
-      <Field label="Date de revente">
-        <Input
-          type="date"
-          value={f.dateRevente}
-          onChange={(e) => setF({ ...f, dateRevente: e.target.value })}
-        />
+            <Field label="Date de revente">
+        <div className="flex items-center gap-2">
+          <Input
+            type="date"
+            value={f.dateRevente}
+            onChange={(e) => setF({ ...f, dateRevente: e.target.value })}
+          />
+          <button
+            type="button"
+            className="text-sm px-2 py-1 rounded-lg border bg-zinc-50"
+            onClick={() => setF({ ...f, dateRevente: "" })}
+          >
+            Effacer
+          </button>
+        </div>
       </Field>
+
       <Field label="Prix de revente (€)">
-        <Input
-          type="number"
-          min="0"
-          step="0.01"
-          value={f.prixRevente}
-          onChange={(e) => setF({ ...f, prixRevente: e.target.value })}
-        />
+        <div className="flex items-center gap-2">
+          <Input
+            type="number"
+            min="0"
+            step="0.01"
+            value={f.prixRevente}
+            onChange={(e) => setF({ ...f, prixRevente: e.target.value })}
+          />
+          <button
+            type="button"
+            className="text-sm px-2 py-1 rounded-lg border bg-zinc-50"
+            onClick={() => setF({ ...f, prixRevente: "" })}
+          >
+            Effacer
+          </button>
+        </div>
       </Field>
+
       <Field label="Lieu de revente">
         <Input value={f.lieuRevente || ""} onChange={(e) => setF({ ...f, lieuRevente: e.target.value })} />
       </Field>
