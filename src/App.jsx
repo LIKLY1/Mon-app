@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Bar, BarChart, CartesianGrid, Line, LineChart, Pie, PieChart, Tooltip,
-  XAxis, YAxis, Legend, ResponsiveContainer, Cell
+  XAxis, YAxis, Legend, ResponsiveContainer, Cell 
 } from "recharts";
 import {
   Plus, LineChart as LineChartIcon, Package, CheckCircle2, Pencil, Trash2,
@@ -50,6 +50,14 @@ const CATEGORIES = ["pokémon", "chaussure", "ticket", "random"];
  *  dateRevente, prixRevente, lieuRevente, created_at
  * }
  */
+
+const STATUSES = [
+  "",
+  "consigne",
+  "retour",
+  "en attente de reception",
+  "litige",
+];
 
 const CATALOGUE = [
 
@@ -150,11 +158,13 @@ export default function AppComptaAchatRevente() {
   q: "",
   categorie: "toutes",
   etat: "tous",
+  statut: "tous",       // <-- ajouté
   dateAchat: "",
   dateRevente: "",
   lieuAchat: "",
   lieuRevente: ""
 });
+
   const [editing, setEditing] = useState(null);
   const [kpiDetail, setKpiDetail] = useState(null);
   const [dateFilter, setDateFilter] = useState({
@@ -185,6 +195,35 @@ const [user, setUser] = useState(null);
 
 const [logoutMsg, setLogoutMsg] = useState(null);
   
+// --- Affichage du nom à montrer à l'utilisateur ---
+function getDisplayName(user) {
+  if (!user) return "";
+
+  // provider explicite (si présent) et identities (Supabase v2 renvoie parfois identities[])
+  const provider = user?.app_metadata?.provider;
+  const identities = user?.identities || [];
+  const hasDiscord = provider === "discord" || identities.some((id) => id?.provider === "discord");
+
+  // champs possibles dans user_metadata (ordre de préférence)
+  const usernameCandidates = [
+    user?.user_metadata?.username,
+    user?.user_metadata?.preferred_username,
+    user?.user_metadata?.full_name,
+    user?.user_metadata?.name,
+    user?.user_metadata?.first_name,
+  ].filter(Boolean);
+
+  if (hasDiscord) {
+    // si Discord, on privilégie username/preferred_username/full_name
+    return usernameCandidates[0] || (user?.email ? user.email.split("@")[0] : "Discord");
+  }
+
+  // pour connexion email / mot de passe : preferer first_name puis fallback sur local-part email
+  return user?.user_metadata?.first_name
+    || user?.user_metadata?.name
+    || user?.user_metadata?.full_name
+    || (user?.email ? user.email.split("@")[0] : "Utilisateur");
+}
 
 
 // initialise la session / écoute les changements d'auth
@@ -326,6 +365,11 @@ function inDateRange(dateStr, from, to) {
       const needle = filtre.lieuRevente.toLowerCase();
       if (!a.lieuRevente || !a.lieuRevente.toLowerCase().includes(needle)) return false;
     }
+    // statut (filter)
+if (filtre.statut && filtre.statut !== "tous") {
+  if (!a.statut || a.statut !== filtre.statut) return false;
+}
+
 
     return true;
   });
@@ -445,6 +489,7 @@ const profitParCategorie = useMemo(() => {
     dateRevente: clean(fieldsToUpdate.dateRevente), // null ou "YYYY-MM-DD"
     prixRevente: fieldsToUpdate.prixRevente != null ? Number(fieldsToUpdate.prixRevente) : null,
     lieuRevente: clean(fieldsToUpdate.lieuRevente),
+    statut: clean(fieldsToUpdate.statut), // <-- ajouté
   };
 
   // 🔁 Mise à jour + retour de la ligne modifiée pour maj locale
@@ -493,47 +538,64 @@ const profitParCategorie = useMemo(() => {
   return (
    <div className="min-h-screen bg-gradient-to-b from-zinc-50 to-zinc-100 dark:from-zinc-950 dark:to-zinc-900 text-zinc-900 dark:text-zinc-50">
      <header className="sticky top-0 z-10 backdrop-blur bg-white/80 dark:bg-zinc-900/80 border-b border-zinc-200 dark:border-zinc-800">
-  <div className="max-w-7xl mx-auto px-4 py-3 flex flex-col sm:flex-row items-center gap-3">
-    {/* Logo + titre */}
-    <div className="flex items-center gap-3">
-      <img src={logo} className="h-10 sm:h-16 w-auto" alt="MoneyTrackR" />
-      {/* On cache le titre sur mobile */}
-      <h1 className="font-semibold text-lg hidden sm:block">MoneyTrackR</h1>
-    </div>
-
-    {/* Actions */}
-    <div className="ml-auto flex items-center gap-2">
-      <Button
-        icon={Plus}
-        className="px-2.5 py-1.5 sm:px-3.5 sm:py-2"
-        onClick={() => setVue("nouvel")}
-      >
-        <span className="hidden sm:inline">Nouvel achat</span>
-      </Button>
-
-      {user ? (
-        <Button
-          variant="outline"
-          className="px-2.5 py-1.5 sm:px-3.5 sm:py-2"
-          onClick={async () => {
-            await supabase.auth.signOut();
-            setLogoutMsg("Déconnecté avec succès ✅");
-            setVue("auth");
-          }}
-        >
-          <span className="hidden sm:inline">Déconnexion</span>
-        </Button>
-      ) : (
-        <Button
-          variant="outline"
-          className="px-2.5 py-1.5 sm:px-3.5 sm:py-2"
-          onClick={() => setVue("auth")}
-        >
-          <span className="hidden sm:inline">Connexion</span>
-        </Button>
-      )}
-    </div>
+  <div className="max-w-7xl mx-auto px-4 py-3 flex items-center gap-3">
+  {/* LEFT: logo + titre */}
+  <div className="flex items-center gap-3">
+    <img src={logo} className="h-10 sm:h-16 w-auto" alt="MoneyTrackR" />
+    <h1 className="font-semibold text-lg hidden sm:block">MoneyTrackR</h1>
   </div>
+
+  {/* CENTER: message centré (prend l'espace restant) */}
+  <div className="flex-1 flex justify-center">
+    {user && (
+      <motion.span
+        initial={{ opacity: 0, y: -6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.32 }}
+        className="text-lg sm:text-xl text-zinc-600 dark:text-zinc-300 text-center truncate"
+        title={`Ravi de te voir ${getDisplayName(user)}`}
+      >
+        Ravi de te voir <strong className="font-semibold text-neon">
+  {getDisplayName(user)}
+</strong>{" "} 👋
+      </motion.span>
+    )}
+  </div>
+
+  {/* RIGHT: actions (gardes tes boutons ici, j'ai retiré le ml-auto) */}
+  <div className="flex items-center gap-2">
+    <Button
+      icon={Plus}
+      className="px-2.5 py-1.5 sm:px-3.5 sm:py-2"
+      onClick={() => setVue("nouvel")}
+    >
+      <span className="hidden sm:inline">Nouvel achat</span>
+    </Button>
+
+    {user ? (
+      <Button
+        variant="outline"
+        className="px-2.5 py-1.5 sm:px-3.5 sm:py-2"
+        onClick={async () => {
+          await supabase.auth.signOut();
+          setLogoutMsg("Déconnecté avec succès ✅");
+          setVue("auth");
+        }}
+      >
+        <span className="hidden sm:inline">Déconnexion</span>
+      </Button>
+    ) : (
+      <Button
+        variant="outline"
+        className="px-2.5 py-1.5 sm:px-3.5 sm:py-2"
+        onClick={() => setVue("auth")}
+      >
+        <span className="hidden sm:inline">Connexion</span>
+      </Button>
+    )}
+  </div>
+</div>
+
 
 
 
@@ -659,15 +721,17 @@ const profitParCategorie = useMemo(() => {
 function NouvelAchat({ onSubmit, user, onAskLogin }) {
   // formulaire local
   const [f, setF] = useState({
-    nom: "",
-    taille: "",
-    categorie: CATEGORIES[0],
-    sousCategorie: "",
-    prixAchat: "",
-    lieuAchat: "",
-    dateAchat: new Date().toISOString().slice(0, 10),
-    quantite: 1,
-  });
+  nom: "",
+  taille: "",
+  categorie: CATEGORIES[0],
+  sousCategorie: "",
+  prixAchat: "",
+  lieuAchat: "",
+  dateAchat: new Date().toISOString().slice(0, 10),
+  quantite: 1,
+  statut: "", // <-- ajouté, valeur par défaut "en cours de préparation"
+});
+
 
   const [q, setQ] = useState("");
 
@@ -688,7 +752,6 @@ function NouvelAchat({ onSubmit, user, onAskLogin }) {
 
   // état pour le nouveau produit catalogue
 const [newProduct, setNewProduct] = useState({
-  nom: "",
   categorie: CATEGORIES[0],
 });
 const [file, setFile] = useState(null);
@@ -762,7 +825,7 @@ async function addToCatalogue(e) {
 
   // Construis le payload en respectant les noms de colonnes de ta table Supabase
   const payload = {
-    nom: q.trim(),
+    nom: q.trim(), // toujours la valeur de la barre recherche
     categorie: newProduct.categorie,
     image_url: url, // null ou string
     // ATTENTION : utilise le nom de colonne exact pour la sous-catégorie (ex : 'sous_categorie' ou 'sousCategorie')
@@ -791,7 +854,7 @@ async function addToCatalogue(e) {
   alert("Article ajouté au catalogue !");
   setAdding(false);
   setFile(null);
-  setNewProduct({ nom: "", categorie: CATEGORIES[0], sousCategorie: "" });
+  setNewProduct({categorie: CATEGORIES[0], sousCategorie: "" });
 }
 
 
@@ -899,16 +962,18 @@ function chooseCatalogItem(item) {
 
     const quantite = Number(f.quantite || 1);
     const articles = Array.from({ length: quantite }, () => ({
-      nom: f.nom,
-      taille: f.taille || null,
-      categorie: f.categorie,
-      sousCategorie: f.sousCategorie || null,
-      prixAchat: Number(f.prixAchat),
-      lieuAchat: f.lieuAchat || null,
-      dateAchat: f.dateAchat,
-      quantite: 1,
-      vendu: false,
-    }));
+  nom: f.nom,
+  taille: f.taille || null,
+  categorie: f.categorie,
+  sousCategorie: f.sousCategorie || null,
+  prixAchat: Number(f.prixAchat),
+  lieuAchat: f.lieuAchat || null,
+  dateAchat: f.dateAchat,
+  quantite: 1,
+  vendu: false,
+  statut: f.statut || null, // <-- ajouté
+}));
+
 
     await onSubmit(articles);
     
@@ -1036,15 +1101,6 @@ setCatalogueCollapsed(false);
   </Button>
 ) : (
       <form onSubmit={addToCatalogue} className="grid gap-3">
-        <Field label="Nom" required>
-  <Input
-    value={newProduct.nom}
-    onChange={(e) =>
-      setNewProduct((p) => ({ ...p, nom: e.target.value }))
-    }
-  />
-</Field>
-
         <Field label="Catégorie">
           <Select
             value={newProduct.categorie}
@@ -1161,6 +1217,8 @@ setCatalogueCollapsed(false);
               />
             </Field>
 
+
+
             <div className="md:col-span-2 flex gap-2">
               <Button icon={Save} type="submit" variant="solid" neon className="pulse">
                 Enregistrer l'achat
@@ -1176,25 +1234,27 @@ setCatalogueCollapsed(false);
 // ---------------- EditForm ----------------
 function EditForm({ initial, onSave }) {
   const [f, setF] = useState(() => ({
-    ...initial,
-    prixAchat: initial.prixAchat != null ? String(initial.prixAchat) : "",
-    prixRevente: initial.prixRevente != null ? String(initial.prixRevente) : "",
-    quantite: initial.quantite || 1,
-    dateRevente: initial.dateRevente || "",
-    lieuRevente: initial.lieuRevente || "",
-  }));
+  ...initial,
+  prixAchat: initial.prixAchat != null ? String(initial.prixAchat) : "",
+  prixRevente: initial.prixRevente != null ? String(initial.prixRevente) : "",
+  quantite: initial.quantite || 1,
+  dateRevente: initial.dateRevente || "",
+  lieuRevente: initial.lieuRevente || "",
+  statut: initial.statut || "", // <-- ajouté
+}));
+
   const [saving, setSaving] = useState(false);
 
-  async function submit(e) {
+    async function submit(e) {
     e.preventDefault();
     if (saving) return;
     setSaving(true);
 
     try {
-      // ✅ venduAuto si date OU prix de revente renseigné
+      // vendu si date OU prix fournis (non vides)
       const venduAuto =
         (f.dateRevente && String(f.dateRevente).trim().length > 0) ||
-        (f.prixRevente !== "" && f.prixRevente != null);
+        (f.prixRevente !== "" && f.prixRevente != null && String(f.prixRevente).trim().length > 0);
 
       const patch = {
         nom: f.nom,
@@ -1203,35 +1263,33 @@ function EditForm({ initial, onSave }) {
         sousCategorie: f.sousCategorie || null,
         prixAchat: Number(f.prixAchat),
         lieuAchat: f.lieuAchat || null,
-        dateAchat: f.dateAchat, // "YYYY-MM-DD"
+        dateAchat: f.dateAchat,
         quantite: Number(f.quantite || 1),
 
         vendu: venduAuto,
-        dateRevente: venduAuto
-          ? (f.dateRevente && String(f.dateRevente).trim().length > 0
-              ? f.dateRevente
-              : new Date().toISOString().slice(0, 10))
-          : null,
-        prixRevente: venduAuto ? Number(f.prixRevente || 0) : null,
-        lieuRevente: venduAuto ? (f.lieuRevente || null) : null,
+        // si vide -> null (on ne remplace PAS par today)
+        dateRevente: (f.dateRevente && String(f.dateRevente).trim().length > 0) ? f.dateRevente : null,
+        // si vide -> null (on n'envoie pas 0)
+        prixRevente: (f.prixRevente !== "" && f.prixRevente != null && String(f.prixRevente).trim().length > 0)
+                        ? Number(f.prixRevente)
+                        : null,
+        lieuRevente: (f.lieuRevente && String(f.lieuRevente).trim().length > 0) ? f.lieuRevente : null,
+        statut: f.statut && String(f.statut).trim().length > 0 ? f.statut : null,
       };
 
       console.log("📝 Submit EditForm -> patch:", patch);
 
-      // ⚠️ onSave doit retourner la promesse (c’est le cas dans ton App)
       const res = await onSave(patch);
 
       if (res && res.error) {
         console.error("❌ onSave error:", res.error);
         alert("Erreur lors de l’enregistrement: " + (res.error.message || "voir console"));
-      } else {
-        // Le parent ferme le modal si succès (setEditing(null))
-        // On ne fait rien ici.
       }
     } finally {
       setSaving(false);
     }
   }
+
 
   return (
     <form onSubmit={submit} className="grid gap-4 md:grid-cols-2">
@@ -1270,25 +1328,54 @@ function EditForm({ initial, onSave }) {
         <Input type="date" value={f.dateAchat} onChange={(e) => setF({ ...f, dateAchat: e.target.value })} />
       </Field>
 
-      <Field label="Date de revente">
-        <Input
-          type="date"
-          value={f.dateRevente}
-          onChange={(e) => setF({ ...f, dateRevente: e.target.value })}
-        />
+            <Field label="Date de revente">
+        <div className="flex items-center gap-2">
+          <Input
+            type="date"
+            value={f.dateRevente}
+            onChange={(e) => setF({ ...f, dateRevente: e.target.value })}
+          />
+          <button
+            type="button"
+            className="text-sm px-2 py-1 rounded-lg border bg-zinc-50"
+            onClick={() => setF({ ...f, dateRevente: "" })}
+          >
+            Effacer
+          </button>
+        </div>
       </Field>
+
       <Field label="Prix de revente (€)">
-        <Input
-          type="number"
-          min="0"
-          step="0.01"
-          value={f.prixRevente}
-          onChange={(e) => setF({ ...f, prixRevente: e.target.value })}
-        />
+        <div className="flex items-center gap-2">
+          <Input
+            type="number"
+            min="0"
+            step="0.01"
+            value={f.prixRevente}
+            onChange={(e) => setF({ ...f, prixRevente: e.target.value })}
+          />
+          <button
+            type="button"
+            className="text-sm px-2 py-1 rounded-lg border bg-zinc-50"
+            onClick={() => setF({ ...f, prixRevente: "" })}
+          >
+            Effacer
+          </button>
+        </div>
       </Field>
+
       <Field label="Lieu de revente">
         <Input value={f.lieuRevente || ""} onChange={(e) => setF({ ...f, lieuRevente: e.target.value })} />
       </Field>
+      <Field label="Statut">
+  <Select
+    value={f.statut}
+    onChange={(e) => setF({ ...f, statut: e.target.value })}
+    options={STATUSES}
+  />
+</Field>
+
+
 
       <div className="md:col-span-2">
         <Button type="submit" icon={Save} disabled={saving}>
@@ -1377,6 +1464,7 @@ useEffect(() => {
     prixRevente: row.prixRevente ? Number(row.prixRevente) : null,
     lieuRevente: row.lieuRevente || row.LieuRevente || "",
     vendu: dateRevente ? true : false,
+    statut: row.statut || row.Statut || null, // <-- ajouté
   };
 });
 
@@ -1559,6 +1647,14 @@ const handleImport = async () => {
       onChange={(e) => setFiltre((f) => ({ ...f, lieuRevente: e.target.value }))}
     />
   </Field>
+  <Field label="Statut">
+  <Select
+    value={filtre.statut || "tous"}
+    onChange={(e) => setFiltre((f) => ({ ...f, statut: e.target.value }))}
+    options={["tous", ...STATUSES]}
+  />
+</Field>
+
 </div>
 
         </div>{/* <-- fermé le flex qui contient onglets + filtres */}
@@ -1632,6 +1728,7 @@ const handleImport = async () => {
           <th className="py-3 pr-4">Date revente</th>
           <th className="py-3 pr-4">Lieu revente</th>
           <th className="py-3 pr-4">Prix revente</th>
+          <th className="py-2 pr-3">Statut</th>
           <th className="py-3 pr-4">Profit</th>
           <th className="py-3 pr-4">Actions</th>
         </tr>
@@ -1647,8 +1744,10 @@ const handleImport = async () => {
             <tr key={a.id} className="border-t border-zinc-200 dark:border-zinc-800">
               <td className="py-3 pr-4">
                 <div className="font-medium">
-                  {a.nom} {a.vendu && <Badge variant="success">Vendu</Badge>}
-                </div>
+  {a.nom} {a.vendu && <Badge variant="success">Vendu</Badge>}
+</div>
+
+
                 {a.taille && <div className="text-xs text-zinc-500">{a.taille}</div>}
               </td>
 
@@ -1663,6 +1762,9 @@ const handleImport = async () => {
               <td className="py-3 pr-4">{a.vendu && a.dateRevente ? formatDate(a.dateRevente) : <span className="text-zinc-400">—</span>}</td>
               <td className="py-3 pr-4">{a.vendu && a.lieuRevente ? a.lieuRevente : <span className="text-zinc-400">—</span>}</td>
               <td className="py-3 pr-4">{a.vendu && revenuUnitaire != null ? formatMoney(revenuTotal || 0) : <span className="text-zinc-400">—</span>}</td>
+              <td className="py-2 pr-3">
+  {a.statut ? <Badge>{a.statut}</Badge> : <span className="text-zinc-400">—</span>}
+</td>
               <td className="py-3 pr-4">
                 {profit != null ? (
                   <span className={profit >= 0 ? "text-emerald-600" : "text-red-600"}>{formatMoney(profit)}</span>
