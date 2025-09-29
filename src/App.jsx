@@ -63,6 +63,13 @@ const CATALOGUE = [
 
 ];
 
+const PAYMENT_STATUSES = [
+  "",
+  "paiement en route",
+  "paiement terminé",
+];
+
+
 
 // --- Tiny UI helpers ---
 function classNames(...xs) { return xs.filter(Boolean).join(" "); }
@@ -158,12 +165,14 @@ export default function AppComptaAchatRevente() {
   q: "",
   categorie: "toutes",
   etat: "tous",
-  statut: "tous",       // <-- ajouté
+  statut: "tous",
+  statutPaiement: "tous", // <-- nouveau
   dateAchat: "",
   dateRevente: "",
   lieuAchat: "",
   lieuRevente: ""
 });
+
 
   const [editing, setEditing] = useState(null);
   const [kpiDetail, setKpiDetail] = useState(null);
@@ -369,6 +378,12 @@ function inDateRange(dateStr, from, to) {
 if (filtre.statut && filtre.statut !== "tous") {
   if (!a.statut || a.statut !== filtre.statut) return false;
 }
+// statut paiement (filter)
+if (filtre.statutPaiement && filtre.statutPaiement !== "tous") {
+  // attention : on compare la colonne DB `statut_paiement` (snake_case) avec la valeur du filtre
+  if (!a.statut_paiement || a.statut_paiement !== filtre.statutPaiement) return false;
+}
+
 
 
     return true;
@@ -490,6 +505,9 @@ const profitParCategorie = useMemo(() => {
     prixRevente: fieldsToUpdate.prixRevente != null ? Number(fieldsToUpdate.prixRevente) : null,
     lieuRevente: clean(fieldsToUpdate.lieuRevente),
     statut: clean(fieldsToUpdate.statut), // <-- ajouté
+    statut: clean(fieldsToUpdate.statut),
+statut_paiement: clean(fieldsToUpdate.statutPaiement), // <-- nouvelle ligne
+
   };
 
   // 🔁 Mise à jour + retour de la ligne modifiée pour maj locale
@@ -1240,7 +1258,8 @@ function EditForm({ initial, onSave }) {
   quantite: initial.quantite || 1,
   dateRevente: initial.dateRevente || "",
   lieuRevente: initial.lieuRevente || "",
-  statut: initial.statut || "", // <-- ajouté
+  statut: initial.statut || "",
+  statutPaiement: initial.statut_paiement || initial.statutPaiement || "",
 }));
 
   const [saving, setSaving] = useState(false);
@@ -1265,6 +1284,9 @@ function EditForm({ initial, onSave }) {
         lieuAchat: f.lieuAchat || null,
         dateAchat: f.dateAchat,
         quantite: Number(f.quantite || 1),
+        statut: f.statut && String(f.statut).trim().length > 0 ? f.statut : null,
+statutPaiement: f.statutPaiement && String(f.statutPaiement).trim().length > 0 ? f.statutPaiement : null,
+
 
         vendu: venduAuto,
         // si vide -> null (on ne remplace PAS par today)
@@ -1374,6 +1396,14 @@ function EditForm({ initial, onSave }) {
     options={STATUSES}
   />
 </Field>
+<Field label="Statut paiement">
+  <Select
+    value={f.statutPaiement}
+    onChange={(e) => setF({ ...f, statutPaiement: e.target.value })}
+    options={PAYMENT_STATUSES}
+  />
+</Field>
+
 
 
 
@@ -1434,8 +1464,14 @@ useEffect(() => {
 
 
   useEffect(() => {
-    setFiltre((f) => ({ ...f, etat: onglet === "tous" ? "tous" : onglet }));
-  }, [onglet, setFiltre]);
+  setFiltre((f) => ({
+    ...f,
+    etat: onglet === "tous" ? "tous" : onglet,
+    // si on quitte "vendus", on remet le filtre paiement à "tous"
+    statutPaiement: onglet === "vendus" ? (f.statutPaiement || "tous") : "tous",
+  }));
+}, [onglet, setFiltre]);
+
 
   const handleFileChange = (e) => {
   const file = e.target.files[0];
@@ -1574,14 +1610,17 @@ const handleImport = async () => {
       variant="subtle"
       onClick={() =>
         setFiltre({
-          q: "",
-          categorie: "toutes",
-          etat: "tous",
-          dateAchat: "",
-          dateRevente: "",
-          lieuAchat: "",
-          lieuRevente: "",
-        })
+  q: "",
+  categorie: "toutes",
+  etat: "tous",
+  statut: "tous",
+  statutPaiement: "tous",
+  dateAchat: "",
+  dateRevente: "",
+  lieuAchat: "",
+  lieuRevente: "",
+})
+
       }
     >
       Réinitialiser
@@ -1654,6 +1693,17 @@ const handleImport = async () => {
     options={["tous", ...STATUSES]}
   />
 </Field>
+{/* Statut paiement — n'affiche que dans l'onglet "Vendus" */}
+{onglet === "vendus" && (
+  <Field label="Statut paiement">
+    <Select
+      value={filtre.statutPaiement || "tous"}
+      onChange={(e) => setFiltre(f => ({ ...f, statutPaiement: e.target.value }))}
+      options={["tous", ...PAYMENT_STATUSES]} // ou ["tous","paiement en route","paiement terminé"]
+    />
+  </Field>
+)}
+
 
 </div>
 
@@ -1728,7 +1778,7 @@ const handleImport = async () => {
           <th className="py-3 pr-4">Date revente</th>
           <th className="py-3 pr-4">Lieu revente</th>
           <th className="py-3 pr-4">Prix revente</th>
-          <th className="py-2 pr-3">Statut</th>
+          <th className="py-2 pr-3">{onglet === "vendus" ? "Statut paiement" : "Statut"}</th>
           <th className="py-3 pr-4">Profit</th>
           <th className="py-3 pr-4">Actions</th>
         </tr>
@@ -1763,7 +1813,12 @@ const handleImport = async () => {
               <td className="py-3 pr-4">{a.vendu && a.lieuRevente ? a.lieuRevente : <span className="text-zinc-400">—</span>}</td>
               <td className="py-3 pr-4">{a.vendu && revenuUnitaire != null ? formatMoney(revenuTotal || 0) : <span className="text-zinc-400">—</span>}</td>
               <td className="py-2 pr-3">
-  {a.statut ? <Badge>{a.statut}</Badge> : <span className="text-zinc-400">—</span>}
+  {onglet === "vendus" ? (
+  a.statut_paiement ? <Badge>{a.statut_paiement}</Badge> : <span className="text-zinc-400">—</span>
+) : (
+  a.statut ? <Badge>{a.statut}</Badge> : <span className="text-zinc-400">—</span>
+)}
+
 </td>
               <td className="py-3 pr-4">
                 {profit != null ? (
